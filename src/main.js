@@ -85,6 +85,7 @@ fill.position.set(-12, 7, -4); scene.add(fill);
 
 // ---------- helpers ----------
 const lambert = (color, extra = {}) => new THREE.MeshStandardMaterial({ color, roughness: 0.62, metalness: 0.02, ...extra });
+const plastic = (color, extra = {}) => new THREE.MeshPhysicalMaterial({ color, roughness: 0.55, metalness: 0, clearcoat: 0.16, clearcoatRoughness: 0.45, ...extra });
 function canvasTex(w, h, draw) {
   const cv = document.createElement('canvas'); cv.width = w; cv.height = h;
   const ctx = cv.getContext('2d'); draw && draw(ctx, w, h);
@@ -773,11 +774,13 @@ flush();
 
 // ---------- characters ----------
 const GEO = {
-  leg: new THREE.CapsuleGeometry(0.07, 0.05, 3, 8),
-  arm: new THREE.CapsuleGeometry(0.05, 0.04, 3, 8),
-  torso: new THREE.SphereGeometry(0.17, 22, 16),
-  head: new THREE.SphereGeometry(0.32, 28, 20),
-  eye: new THREE.CapsuleGeometry(0.034, 0.062, 3, 8),
+  leg: new THREE.CapsuleGeometry(0.05, 0.06, 6, 16),
+  arm: new THREE.CapsuleGeometry(0.042, 0.05, 6, 16),
+  torso: new THREE.SphereGeometry(0.145, 36, 28),
+  head: new THREE.SphereGeometry(0.2, 40, 32),
+  eye: new THREE.SphereGeometry(0.026, 20, 16),
+  foot: new THREE.SphereGeometry(0.055, 18, 14),
+  hand: new THREE.SphereGeometry(0.042, 16, 12),
 };
 const eyeBlack = lambert('#111111');
 const eyes = [];
@@ -786,7 +789,7 @@ function makeTag(shortName, fullName) {
   el.innerHTML = '<span class="q"></span><span class="short"></span><span class="full"></span><span class="ln"></span>';
   el.querySelector('.short').textContent = shortName; el.querySelector('.full').textContent = fullName;
   el.addEventListener('click', () => el.classList.toggle('open'));
-  const tag = new CSS2DObject(el); tag.position.set(0, 1.42, 0);
+  const tag = new CSS2DObject(el); tag.position.set(0, 1.08, 0);
   return { el, tag };
 }
 function accessory(kind) {
@@ -892,54 +895,68 @@ function hatFor(kind) {
 function buildCharacter({ color, shortName, fullName, acc, hat, blinkPhase = 0 }) {
   const root = new THREE.Group(); scene.add(root);
   const body = new THREE.Group(); root.add(body);
-  const shell = lambert(color), limb = lambert(mix(color, '#ffffff', 0.12));
+  const shell = plastic(color), limb = plastic(mix(color, '#ffffff', 0.08));
   const legL = new THREE.Group(), legR = new THREE.Group();
-  legL.position.set(-0.08, 0.22, 0); legR.position.set(0.08, 0.22, 0);
-  const lm = new THREE.Mesh(GEO.leg, limb); lm.position.y = -0.08; lm.castShadow = true;
-  const rm = new THREE.Mesh(GEO.leg, limb); rm.position.y = -0.08; rm.castShadow = true;
-  legL.add(lm); legR.add(rm); body.add(legL, legR);
-  const torso = new THREE.Mesh(GEO.torso, shell); torso.position.y = 0.4; torso.castShadow = true; body.add(torso);
-  const head = new THREE.Mesh(GEO.head, shell); head.position.y = 0.78; head.castShadow = true; body.add(head);
-  const pair = [[-0.07, 0.1], [0.055, 0.03]].map(([x, y]) => {
+  legL.position.set(-0.07, 0.18, 0); legR.position.set(0.07, 0.18, 0);
+  for (const leg of [legL, legR]) {
+    const limbMesh = new THREE.Mesh(GEO.leg, limb); limbMesh.position.y = -0.055; limbMesh.castShadow = true; leg.add(limbMesh);
+    const foot = new THREE.Mesh(GEO.foot, limb); foot.position.set(0, -0.12, 0.015); foot.scale.set(1.15, 0.62, 1.35); foot.castShadow = true; leg.add(foot);
+    body.add(leg);
+  }
+  const torso = new THREE.Mesh(GEO.torso, shell); torso.scale.set(1.08, 1.18, 0.95); torso.position.y = 0.36; torso.castShadow = true; body.add(torso);
+  const head = new THREE.Mesh(GEO.head, shell); head.position.y = 0.68; head.castShadow = true; body.add(head);
+  const visor = new THREE.Mesh(new THREE.SphereGeometry(0.128, 32, 24), new THREE.MeshPhysicalMaterial({ color: '#f4f1ea', roughness: 0.86, metalness: 0, clearcoat: 0 }));
+  visor.scale.set(1.12, 0.8, 0.4); visor.position.set(0, 0.012, 0.14); visor.castShadow = false; head.add(visor);
+  const pair = [[-0.04, 0.012], [0.04, 0.0]].map(([x, y]) => {
     const m = new THREE.Mesh(GEO.eye, eyeBlack);
-    m.scale.set(1.15, 1.2, 0.72); m.position.set(x, y, 0.29); m.rotation.z = -0.38; m.castShadow = false; m.receiveShadow = false; head.add(m); return m;
+    m.scale.set(0.78, 1.28, 0.55); m.position.set(x, y, 0.205); m.castShadow = false; m.receiveShadow = false; head.add(m); return m;
   });
   eyes.push({ pair, phase: blinkPhase, open: 1 });
   let spin = null;
-  if (hat) { const h = hatFor(hat); h.g.position.y = 0.12; head.add(h.g); spin = h.spin; }
+  if (hat) { const h = hatFor(hat); h.g.scale.setScalar(0.58); h.g.position.y = 0.1; head.add(h.g); spin = h.spin; }
   const armL = new THREE.Group(), armR = new THREE.Group();
-  armL.position.set(-0.2, 0.46, 0); armR.position.set(0.2, 0.46, 0);
-  const al = new THREE.Mesh(GEO.arm, limb); al.position.y = -0.09; al.castShadow = true;
-  const ar = new THREE.Mesh(GEO.arm, limb); ar.position.y = -0.09; ar.castShadow = true;
-  armL.add(al); armR.add(ar); body.add(armL, armR);
+  armL.position.set(-0.175, 0.4, 0); armR.position.set(0.175, 0.4, 0);
+  for (const arm of [armL, armR]) {
+    const limbMesh = new THREE.Mesh(GEO.arm, limb); limbMesh.position.y = -0.05; limbMesh.castShadow = true; arm.add(limbMesh);
+    const hand = new THREE.Mesh(GEO.hand, limb); hand.position.y = -0.1; hand.castShadow = true; arm.add(hand);
+    body.add(arm);
+  }
   const item = accessory(acc || 'book');
   if (item.on === 'body') body.add(item.g);
   else if (item.on === 'chest') { item.g.position.set(0, 0.5, 0.2); body.add(item.g); }
   else if (item.on === 'shoulder') { item.g.position.set(-0.2, 0.58, 0); body.add(item.g); }
-  else { item.g.position.set(0, -0.2, 0.04); armR.add(item.g); }
+  else { item.g.position.set(0, -0.12, 0.03); armR.add(item.g); }
   if (acc === 'tophat') { const globe = accessory('globe'); globe.g.position.set(0, -0.2, 0.04); armL.add(globe.g); }
   if (acc === 'headset') { const marker = accessory('marker'); marker.g.position.set(0.02, -0.22, 0.04); armR.add(marker.g); }
   if (acc === 'laptop') {
-    const mark = new THREE.Shape();
-    mark.moveTo(0, 0.072);
-    mark.lineTo(-0.038, -0.016);
-    mark.lineTo(-0.01, -0.016);
-    mark.lineTo(-0.026, -0.062);
-    mark.lineTo(-0.006, -0.07);
-    mark.lineTo(0.014, -0.02);
-    mark.lineTo(0.04, -0.02);
-    mark.closePath();
-    const logoMat = lambert('#f4f6f8', { side: THREE.DoubleSide });
-    const chest = new THREE.Mesh(new THREE.ShapeGeometry(mark), logoMat);
-    chest.position.set(0, 0.44, 0.2); chest.castShadow = false;
-    const back = chest.clone();
-    back.position.set(0, 0.44, -0.2); back.rotation.y = Math.PI; back.scale.x = -1;
+    const logo = canvasTex(256, 256, (ctx) => {
+      ctx.clearRect(0, 0, 256, 256);
+      ctx.fillStyle = '#14171c';
+      ctx.beginPath();
+      ctx.moveTo(78, 42);
+      ctx.lineTo(74, 196);
+      ctx.lineTo(112, 158);
+      ctx.lineTo(146, 214);
+      ctx.lineTo(176, 198);
+      ctx.lineTo(140, 140);
+      ctx.lineTo(196, 136);
+      ctx.closePath();
+      ctx.fill();
+    });
+    const logoMat = new THREE.MeshBasicMaterial({ map: logo.t, transparent: true, depthWrite: false, toneMapped: true });
+    const chest = new THREE.Mesh(new THREE.PlaneGeometry(0.11, 0.11), logoMat);
+    chest.position.set(0, 0.38, 0.155); chest.castShadow = false;
+    const back = new THREE.Mesh(new THREE.PlaneGeometry(0.11, 0.11), logoMat);
+    back.position.set(0, 0.38, -0.155); back.rotation.y = Math.PI; back.castShadow = false;
     body.add(chest, back);
+  } else {
+    const badge = new THREE.Mesh(new THREE.SphereGeometry(0.04, 16, 12), plastic(mix(color, '#000000', 0.22), { roughness: 0.7, clearcoat: 0 }));
+    badge.scale.set(1.15, 0.85, 0.32); badge.position.set(0, 0.38, 0.15); badge.castShadow = false; body.add(badge);
   }
   const folder = new THREE.Mesh(new RoundedBoxGeometry(0.18, 0.026, 0.13, 2, 0.01), lambert('#c9a970'));
   folder.position.set(0, 0.5, 0.22); folder.visible = false; folder.castShadow = true; body.add(folder);
   const errMark = new THREE.Mesh(new THREE.SphereGeometry(0.045, 10, 8), lambert('#c0504a'));
-  errMark.position.set(0, 1.08, 0); errMark.visible = false; body.add(errMark);
+  errMark.position.set(0, 0.96, 0); errMark.visible = false; body.add(errMark);
   const thrust = new THREE.Mesh(new THREE.SphereGeometry(0.045, 8, 6), new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.9, toneMapped: true }));
   thrust.visible = false; scene.add(thrust);
   const trail = [0.5, 0.3, 0.15].map((opacity) => {
@@ -948,7 +965,7 @@ function buildCharacter({ color, shortName, fullName, acc, hat, blinkPhase = 0 }
   });
   const { el, tag } = makeTag(shortName, fullName); root.add(tag);
   body.traverse((o) => { if (o.isMesh) tagByMesh.set(o, el); });
-  root.scale.setScalar(1.6);
+  root.scale.setScalar(1.2);
   return { root, body, legL, legR, armL, armR, head, folder, errMark, el, thrust, trail, spin };
 }
 
@@ -1147,7 +1164,7 @@ function applyPose(bot, pose, seatY = 0) {
   bot.armL.scale.set(1, 1, 1); bot.armR.scale.set(1, 1, 1);
   bot.legL.scale.set(1, 1, 1); bot.legR.scale.set(1, 1, 1);
   for (const arm of [bot.armL, bot.armR]) arm.children.forEach((c) => { c.visible = true; });
-  bot.body.position.y = sit ? 0.16 + seatY : 0;
+  bot.body.position.y = sit ? 0.22 + seatY : 0;
   bot.body.position.z = sit ? 0.0 : 0;
 }
 function place(bot, t) {
