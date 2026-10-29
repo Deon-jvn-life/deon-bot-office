@@ -368,6 +368,34 @@ hFloor(18, -2, 8, 16, sandMat, -0.03);
 hFloor(21.5, -2, 4, 16, waterMat, -0.06);
 const towers = [[5.5, -11.4, 1.6, 1.5, 4.2], [8.2, -12.2, 1.2, 1.2, 7.2], [10.6, -11.3, 1.8, 1.4, 3.4], [13.2, -12.4, 1.3, 1.3, 5.6], [3.2, -11.0, 2.2, 1.1, 2.2], [16.2, -6.5, 1.3, 1.3, 4.8], [17.4, -3.2, 1.6, 1.4, 3.1]];
 towers.forEach((t, i) => bar(t[0], t[4] / 2, t[1], t[2], t[4], t[3], towerMats[i % towerMats.length]));
+function propertySign(tower, name, unit, signW, signY) {
+  const [x, z, , depth, height] = tower;
+  const tex = canvasTex(1280, 560, (ctx, W, H) => {
+    ctx.fillStyle = '#f6f3ec';
+    ctx.fillRect(0, 0, W, H);
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = '#243044';
+    let namePx = 210;
+    ctx.font = `700 ${namePx}px system-ui, sans-serif`;
+    while (ctx.measureText(name).width > W - 96 && namePx > 64) {
+      namePx -= 6;
+      ctx.font = `700 ${namePx}px system-ui, sans-serif`;
+    }
+    ctx.fillText(name, W / 2, H * 0.36);
+    ctx.fillStyle = '#3c4c62';
+    ctx.font = `600 ${Math.round(namePx * 0.58)}px system-ui, sans-serif`;
+    ctx.fillText(unit, W / 2, H * 0.74);
+  });
+  const signH = signW * 0.44;
+  const mesh = new THREE.Mesh(new THREE.PlaneGeometry(signW, signH), new THREE.MeshLambertMaterial({ map: tex.t, color: '#ffffff' }));
+  mesh.position.set(x, signY == null ? Math.max(signH * 0.55, height - signH * 0.55 - 0.08) : signY, z + depth / 2 + 0.05);
+  mesh.castShadow = false;
+  scene.add(mesh);
+}
+propertySign(towers[0], 'Offord Manor', '22', 3.0, 3.15);
+propertySign(towers[1], 'Sienna', '55', 2.6, 3.45);
+propertySign(towers[2], 'Boardwalk Heights', '336', 3.5, 2.6);
 spawnPlant(olivePlant(), 7.4, -10.8, 0.85, 0.4);
 
 // ---------- glass offices ----------
@@ -463,6 +491,14 @@ const waitSpots = [-8.7, -8.2, -7.65, -7.1, -5.55, -5.05, -4.55, -4.05]
 bar(7.15, 0.42, -7.9, 0.32, 0.46, 1.85, deskMat);
 bar(7.15, 0.42, -4.8, 0.32, 0.46, 1.7, deskMat);
 for (const spot of waitSpots) {
+  put(new THREE.CylinderGeometry(0.11, 0.11, 0.05, 10), chairMat, spot.x, 0.28, spot.z);
+  put(new THREE.CylinderGeometry(0.025, 0.025, 0.24, 8), metal, spot.x, 0.12, spot.z);
+}
+const chiefWaitSpots = [-0.5, -1.0, -1.5, -2.0]
+  .map((z) => ({ x: 6.55, z, ry: Math.PI / 2, pose: 'stand', door: { x: 5.7, z } }))
+  .sort((a, b) => Math.abs(a.z - 0.35) - Math.abs(b.z - 0.35));
+bar(7.15, 0.42, -1.25, 0.32, 0.46, 1.6, deskMat);
+for (const spot of chiefWaitSpots) {
   put(new THREE.CylinderGeometry(0.11, 0.11, 0.05, 10), chairMat, spot.x, 0.28, spot.z);
   put(new THREE.CylinderGeometry(0.025, 0.025, 0.24, 8), metal, spot.x, 0.12, spot.z);
 }
@@ -771,12 +807,87 @@ function accessory(kind) {
     case 'briefcase': add(new RoundedBoxGeometry(0.22, 0.16, 0.07, 2, 0.015), lambert('#5a4030'), 0, -0.08, 0); return { g, on: 'hand' };
     case 'bag': add(new RoundedBoxGeometry(0.16, 0.12, 0.12, 2, 0.012), lambert('#d2b48a'), 0, -0.05, 0); add(new THREE.BoxGeometry(0.162, 0.012, 0.122), lambert('#c4b49a'), 0, -0.01, 0); return { g, on: 'hand' };
     case 'laptop': add(new RoundedBoxGeometry(0.16, 0.012, 0.11, 2, 0.004), lambert('#d9dde2'), 0, -0.02, 0, -0.7); add(new RoundedBoxGeometry(0.16, 0.1, 0.01, 2, 0.004), lambert('#2c3138'), 0, 0.04, -0.05, -0.7); return { g, on: 'hand' };
-    case 'camera': add(new RoundedBoxGeometry(0.14, 0.09, 0.07, 2, 0.015), lambert('#33363b'), 0, 0, 0); add(new THREE.CylinderGeometry(0.03, 0.03, 0.05, 12), dark, 0, 0, 0.05, Math.PI / 2); return { g, on: 'chest' };
+    case 'paintbrush': add(new THREE.CylinderGeometry(0.012, 0.014, 0.16, 8), lambert('#a56a3a'), 0, 0, 0, Math.PI / 2, 0, 0); add(new THREE.CylinderGeometry(0.016, 0.016, 0.03, 8), lambert('#d5dbe0'), 0, 0, 0.09, Math.PI / 2, 0, 0); add(new THREE.ConeGeometry(0.018, 0.05, 8), lambert('#3d8fd4'), 0, 0, 0.125, Math.PI / 2, 0, 0); return { g, on: 'hand' };
     default: return { g, on: 'hand' };
   }
 }
 const tagByMesh = new Map();
-function buildCharacter({ color, shortName, fullName, acc, blinkPhase = 0 }) {
+function hatFor(kind) {
+  const g = new THREE.Group();
+  const add = (geo, mat, x, y, z, rx = 0, ry = 0, rz = 0, sx = 1, sy = 1, sz = 1) => {
+    const m = new THREE.Mesh(geo, mat); m.position.set(x, y, z); m.rotation.set(rx, ry, rz); m.scale.set(sx, sy, sz); m.castShadow = true; g.add(m); return m;
+  };
+  let spin = null;
+  const ink = lambert('#1a1c20'), navy = lambert('#1a3058'), olive = lambert('#5a6840');
+  if (kind === 'helmet') {
+    add(new THREE.SphereGeometry(0.13, 14, 10), lambert('#3e4650'), 0, 0.2, 0, 0, 0, 0, 1.15, 0.52, 1.28);
+    add(new THREE.SphereGeometry(0.06, 10, 8), lambert('#3e4650'), 0, 0.16, -0.1, 0, 0, 0, 0.7, 0.38, 1.25);
+    for (const x of [-0.045, 0.045]) add(new THREE.BoxGeometry(0.03, 0.014, 0.1), ink, x, 0.268, 0.02);
+  } else if (kind === 'mortar') {
+    add(new THREE.SphereGeometry(0.1, 12, 8), ink, 0, 0.16, 0, 0, 0, 0, 1, 0.38, 1);
+    add(new THREE.BoxGeometry(0.32, 0.012, 0.32), lambert('#141414'), 0, 0.22, 0);
+    add(new THREE.CylinderGeometry(0.008, 0.008, 0.14, 6), lambert('#c6a35a'), 0.15, 0.14, 0.04);
+    add(new THREE.SphereGeometry(0.026, 8, 6), lambert('#c6a35a'), 0.15, 0.06, 0.04);
+  } else if (kind === 'beanie') {
+    add(new THREE.SphereGeometry(0.12, 14, 10), lambert('#b3473c'), 0, 0.17, 0, 0, 0, 0, 1.05, 0.58, 1.05);
+    add(new THREE.CylinderGeometry(0.125, 0.128, 0.02, 12), lambert('#8e342c'), 0, 0.12, 0);
+    spin = new THREE.Group(); spin.position.y = 0.3; g.add(spin);
+    const hub = new THREE.Mesh(new THREE.CylinderGeometry(0.016, 0.016, 0.02, 8), lambert('#c9ccd0')); hub.castShadow = true; spin.add(hub);
+    const blade = lambert('#d5d8dc');
+    const b1 = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.008, 0.026), blade); b1.castShadow = true; spin.add(b1);
+    const b2 = new THREE.Mesh(new THREE.BoxGeometry(0.026, 0.008, 0.16), blade); b2.castShadow = true; spin.add(b2);
+  } else if (kind === 'army') {
+    add(new THREE.SphereGeometry(0.12, 14, 10), olive, 0.02, 0.17, 0, 0, 0, -0.45, 1.25, 0.36, 1.12);
+    add(new THREE.CylinderGeometry(0.012, 0.012, 0.028, 6), lambert('#3e4a2c'), 0.04, 0.24, 0);
+  } else if (kind === 'captain') {
+    add(new THREE.CylinderGeometry(0.1, 0.112, 0.07, 14), navy, 0, 0.23, 0);
+    add(new THREE.CylinderGeometry(0.1, 0.1, 0.012, 14), lambert('#152848'), 0, 0.268, 0);
+    add(new THREE.BoxGeometry(0.16, 0.012, 0.07), ink, 0, 0.185, 0.12, -0.35);
+    add(new THREE.CylinderGeometry(0.112, 0.112, 0.016, 14), lambert('#c6a35a'), 0, 0.2, 0);
+  } else if (kind === 'visor') {
+    add(new THREE.TorusGeometry(0.2, 0.016, 6, 16), lambert('#246b3e'), 0, 0.08, 0, Math.PI / 2);
+    add(new THREE.BoxGeometry(0.26, 0.016, 0.14), lambert('#2f8a4e'), 0, 0.12, 0.18, 0.35);
+  } else if (kind === 'courier') {
+    add(new THREE.SphereGeometry(0.12, 12, 8), lambert('#5a3d2c'), 0, 0.2, 0, 0, 0, 0, 1.1, 0.55, 1.15);
+    add(new THREE.BoxGeometry(0.18, 0.014, 0.1), lambert('#3e2a1e'), 0, 0.16, 0.15, -0.25);
+  } else if (kind === 'fedora') {
+    add(new THREE.CylinderGeometry(0.08, 0.09, 0.09, 12), lambert('#2a2724'), 0, 0.26, 0);
+    add(new THREE.CylinderGeometry(0.16, 0.16, 0.012, 16), lambert('#2a2724'), 0, 0.2, 0);
+    add(new THREE.CylinderGeometry(0.092, 0.092, 0.016, 12), lambert('#6b442c'), 0, 0.22, 0);
+  } else if (kind === 'postman') {
+    add(new THREE.CylinderGeometry(0.1, 0.108, 0.055, 14), lambert('#2a4570'), 0, 0.22, 0);
+    add(new THREE.BoxGeometry(0.15, 0.01, 0.08), ink, 0, 0.185, 0.11, -0.25);
+    add(new THREE.BoxGeometry(0.03, 0.02, 0.008), lambert('#c6a35a'), 0, 0.22, 0.105);
+  } else if (kind === 'beret') {
+    add(new THREE.SphereGeometry(0.15, 14, 10), lambert('#1c1e24'), 0.03, 0.2, 0, 0.12, 0, 0.55, 1.4, 0.36, 1.25);
+    add(new THREE.CylinderGeometry(0.01, 0.01, 0.02, 6), ink, 0.02, 0.23, 0);
+  } else if (kind === 'sunhat') {
+    add(new THREE.CylinderGeometry(0.075, 0.09, 0.06, 12), lambert('#e4d2a6'), 0, 0.22, 0);
+    add(new THREE.CylinderGeometry(0.22, 0.22, 0.012, 18), lambert('#dcc69a'), 0, 0.185, 0);
+  } else if (kind === 'tophat') {
+    add(new THREE.CylinderGeometry(0.15, 0.15, 0.016, 16), lambert('#111111'), 0, 0.2, 0);
+    add(new THREE.CylinderGeometry(0.082, 0.086, 0.13, 14), lambert('#111111'), 0, 0.27, 0);
+    add(new THREE.CylinderGeometry(0.088, 0.088, 0.018, 14), lambert('#1c1c1c'), 0, 0.23, 0);
+  } else if (kind === 'micset') {
+    add(new THREE.TorusGeometry(0.2, 0.012, 6, 16, Math.PI), lambert('#2a2e33'), 0, 0.04, 0, 0, Math.PI / 2, 0);
+    add(new THREE.SphereGeometry(0.045, 10, 8), lambert('#2a2e33'), 0.2, 0.02, 0);
+    add(new THREE.SphereGeometry(0.045, 10, 8), lambert('#2a2e33'), -0.2, 0.02, 0);
+    add(new THREE.CylinderGeometry(0.006, 0.006, 0.11, 6), lambert('#3a3e44'), 0.14, -0.02, 0.1, Math.PI / 2.6);
+    add(new THREE.SphereGeometry(0.014, 6, 6), lambert('#3a3e44'), 0.14, -0.05, 0.16);
+  } else if (kind === 'hardhat') {
+    add(new THREE.SphereGeometry(0.14, 14, 10), lambert('#e3c04a'), 0, 0.2, 0, 0, 0, 0, 1.05, 0.58, 1.08);
+    add(new THREE.CylinderGeometry(0.18, 0.18, 0.012, 16), lambert('#d4b03a'), 0, 0.15, 0);
+    add(new THREE.BoxGeometry(0.018, 0.028, 0.16), lambert('#c9a33a'), 0, 0.275, 0);
+  } else if (kind === 'phones') {
+    add(new THREE.TorusGeometry(0.2, 0.014, 6, 16, Math.PI), lambert('#2c3036'), 0, 0.04, 0, 0, Math.PI / 2, 0);
+    add(new THREE.CylinderGeometry(0.058, 0.058, 0.042, 12), lambert('#2c3036'), 0.2, 0.02, 0, 0, 0, Math.PI / 2);
+    add(new THREE.CylinderGeometry(0.058, 0.058, 0.042, 12), lambert('#2c3036'), -0.2, 0.02, 0, 0, 0, Math.PI / 2);
+    add(new THREE.TorusGeometry(0.05, 0.007, 6, 12), lambert('#3d8fd4'), 0.2, 0.02, 0, 0, Math.PI / 2, 0);
+    add(new THREE.TorusGeometry(0.05, 0.007, 6, 12), lambert('#3d8fd4'), -0.2, 0.02, 0, 0, Math.PI / 2, 0);
+  }
+  return { g, spin };
+}
+function buildCharacter({ color, shortName, fullName, acc, hat, blinkPhase = 0 }) {
   const root = new THREE.Group(); scene.add(root);
   const body = new THREE.Group(); root.add(body);
   const shell = lambert(color), limb = lambert(mix(color, '#ffffff', 0.12));
@@ -793,6 +904,8 @@ function buildCharacter({ color, shortName, fullName, acc, blinkPhase = 0 }) {
   });
   pair.forEach((m) => { m.rotation.z = -0.38; });
   eyes.push({ pair, phase: blinkPhase, open: 1.25 });
+  let spin = null;
+  if (hat) { const h = hatFor(hat); head.add(h.g); spin = h.spin; }
   const armL = new THREE.Group(), armR = new THREE.Group();
   armL.position.set(-0.22, 0.52, 0); armR.position.set(0.22, 0.52, 0);
   const al = new THREE.Mesh(GEO.arm, limb); al.position.y = -0.09; al.castShadow = true;
@@ -817,12 +930,12 @@ function buildCharacter({ color, shortName, fullName, acc, blinkPhase = 0 }) {
   });
   const { el, tag } = makeTag(shortName, fullName); root.add(tag);
   body.traverse((o) => { if (o.isMesh) tagByMesh.set(o, el); });
-  return { root, body, legL, legR, armL, armR, head, folder, errMark, el, thrust, trail };
+  return { root, body, legL, legR, armL, armR, head, folder, errMark, el, thrust, trail, spin };
 }
 
 const bots = new Map();
 TEAM.forEach((b, i) => {
-  const parts = buildCharacter({ color: b.color, shortName: b.short, fullName: b.name, acc: b.acc, blinkPhase: i * 0.73 });
+  const parts = buildCharacter({ color: b.color, shortName: b.short, fullName: b.name, acc: b.acc, hat: b.hat, blinkPhase: i * 0.73 });
   bots.set(b.id, { b, i, ...parts, path: [], walking: false, target: null, state: 'idle', line: '', phase: 0 });
 });
 const deon = buildCharacter({ color: '#8e9ea3', shortName: 'Deon', fullName: 'Deon', acc: null, blinkPhase: 1.4 });
@@ -903,7 +1016,7 @@ function stepDeon(dt) {
 
 // ---------- placement & movement ----------
 const statusById = new Map();
-const waitingSince = new Map();
+const queuedAt = new Map();
 const NORSE_ID = 'd6c82145-5a65-4faa-a9d3-441c60493abf';
 function priorityOf(status) {
   if (!status || status.priority == null || status.priority === '') return null;
@@ -911,20 +1024,24 @@ function priorityOf(status) {
   return Number.isFinite(n) ? n : null;
 }
 function noteWaiting(id, state, status) {
-  if (state !== 'waiting') { waitingSince.delete(id); return; }
-  const server = status && (status.waiting_since || (status.state === 'waiting' ? status.updated_at : null));
-  if (server) waitingSince.set(id, new Date(server).getTime());
-  else if (!waitingSince.has(id)) waitingSince.set(id, Date.now() + waitingSince.size * 0.001);
+  const queued = state === 'waiting' || state === 'chief';
+  if (!queued) { queuedAt.delete(id); return; }
+  const prev = queuedAt.get(id);
+  const same = status && status.state === state;
+  const server = same && (status.waiting_since || status.updated_at);
+  if (server) queuedAt.set(id, { state, at: new Date(server).getTime() });
+  else if (!prev || prev.state !== state) queuedAt.set(id, { state, at: Date.now() + queuedAt.size * 0.001 });
 }
-function waitingOrder() {
+function queueRows(state) {
   const rows = [];
   for (const bot of bots.values()) {
-    if (bot.state !== 'waiting') continue;
+    if (bot.state !== state) continue;
     const status = statusById.get(bot.b.id);
-    rows.push({ id: bot.b.id, chief: bot.b.id === LEAD_ID, priority: priorityOf(status), at: waitingSince.get(bot.b.id) || 0 });
+    const stamp = queuedAt.get(bot.b.id);
+    rows.push({ id: bot.b.id, lead: state === 'waiting' && bot.b.id === LEAD_ID, priority: priorityOf(status), at: stamp && stamp.state === state ? stamp.at : 0 });
   }
   rows.sort((a, b) => {
-    if (a.chief !== b.chief) return a.chief ? -1 : 1;
+    if (a.lead !== b.lead) return a.lead ? -1 : 1;
     const ap = a.priority == null, bp = b.priority == null;
     if (ap !== bp) return ap ? 1 : -1;
     if (!ap && a.priority !== b.priority) return a.priority - b.priority;
@@ -932,43 +1049,51 @@ function waitingOrder() {
   });
   return rows;
 }
-function spotForRank(i) {
-  if (i < waitSpots.length) return waitSpots[i];
-  const base = waitSpots[i % waitSpots.length];
+function spotOn(spots, i) {
+  if (i < 0) i = 0;
+  if (i < spots.length) return spots[i];
+  const base = spots[i % spots.length];
   return { ...base, x: base.x - 0.4 };
 }
 function syncQueue() {
-  const order = waitingOrder();
-  const queued = new Set(order.map((w) => w.id));
+  const waiting = queueRows('waiting');
+  const chiefs = queueRows('chief');
+  const queued = new Set([...waiting, ...chiefs].map((w) => w.id));
   for (const bot of bots.values()) {
     if (queued.has(bot.b.id)) continue;
     bot.el.classList.remove('queued');
     const badge = bot.el.querySelector('.q');
     if (badge) badge.textContent = '';
     bot.queueRank = 0;
+    bot.queueKind = '';
   }
-  order.forEach((w, i) => {
-    const bot = bots.get(w.id);
-    const rank = i + 1;
-    bot.el.classList.add('queued');
-    bot.el.querySelector('.q').textContent = String(rank);
-    const spot = spotForRank(i);
-    const same = bot.queueRank === rank && bot.target && bot.target.x === spot.x && bot.target.z === spot.z;
-    bot.queueRank = rank;
-    if (same || bot.walking) { bot.target = spot; return; }
-    const prev = bot.target;
-    bot.target = spot;
-    if (prev && (prev.x !== spot.x || prev.z !== spot.z)) {
-      applyPose(bot, 'stand');
-      bot.path = route(bot.root.position, prev.door || spot.door, spot);
-      bot.walking = true;
-    }
-  });
+  const placeLine = (order, spots) => {
+    order.forEach((w, i) => {
+      const bot = bots.get(w.id);
+      const rank = i + 1;
+      const spot = spotOn(spots, i);
+      bot.el.classList.add('queued');
+      bot.el.querySelector('.q').textContent = String(rank);
+      const same = bot.queueRank === rank && bot.queueKind === bot.state && bot.target && bot.target.x === spot.x && bot.target.z === spot.z;
+      bot.queueRank = rank;
+      bot.queueKind = bot.state;
+      if (same || bot.walking) { bot.target = spot; return; }
+      const prev = bot.target;
+      bot.target = spot;
+      if (prev && (prev.x !== spot.x || prev.z !== spot.z)) {
+        applyPose(bot, 'stand');
+        bot.path = route(bot.root.position, prev.door || spot.door, spot);
+        bot.walking = true;
+      }
+    });
+  };
+  placeLine(waiting, waitSpots);
+  placeLine(chiefs, chiefWaitSpots);
   const qEl = document.getElementById('queue');
   if (!qEl) return;
-  if (!order.length) { qEl.style.display = 'none'; qEl.textContent = ''; return; }
+  if (!waiting.length) { qEl.style.display = 'none'; qEl.textContent = ''; return; }
   qEl.style.display = 'block';
-  qEl.textContent = 'Waiting on you: ' + order.map((w, i) => `${i + 1} ${bots.get(w.id).b.short}`).join(', ');
+  qEl.textContent = 'Waiting on you: ' + waiting.map((w, i) => `${i + 1} ${bots.get(w.id).b.short}`).join(', ');
 }
 function targetFor(id, state) {
   const sp = spots[id];
@@ -976,7 +1101,8 @@ function targetFor(id, state) {
   switch (state) {
     case 'working': return id === LEAD_ID ? chiefBoard : id === CODING_ID ? codingWork : sp.desk;
     case 'error': return id === CODING_ID ? codingWork : sp.deskStand;
-    case 'waiting': return spotForRank(Math.max(0, waitingOrder().findIndex((w) => w.id === id)));
+    case 'waiting': return spotOn(waitSpots, Math.max(0, queueRows('waiting').findIndex((w) => w.id === id)));
+    case 'chief': return spotOn(chiefWaitSpots, Math.max(0, queueRows('chief').findIndex((w) => w.id === id)));
     case 'handoff': return id === LEAD_ID ? sp.deskStand : handoffSpots[(deptIdx - 1 + 13) % 13];
     default: return id === LEAD_ID ? sp.desk : id === CODING_ID ? codingIdle : seats[(deptIdx - 1) % seats.length];
   }
@@ -1198,6 +1324,7 @@ function loop() {
       bot.armR.rotation.x = -0.84 - s * 0.2;
       bot.head.rotation.x = Math.sin(t * 2.2 + bot.i) * 0.07;
     } else if (!bot.walking) bot.head.rotation.set(0, 0, 0);
+    if (bot.spin) bot.spin.rotation.y += dt * 1.7;
   }
   stepBoard(dt, chiefWriting);
   syncGym(Date.now(), t);

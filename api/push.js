@@ -15,7 +15,7 @@ export default async function handler(req, res) {
     priority = Math.trunc(n);
   }
   if (!BOTS.has(bot)) return res.status(400).json({ error: 'unknown bot_id' });
-  if (!STATES.has(state)) return res.status(400).json({ error: 'state must be working|waiting|handoff|error|done|idle' });
+  if (!STATES.has(state)) return res.status(400).json({ error: 'state must be working|waiting|handoff|error|done|idle|chief' });
   if (line.length > MAX_LINE) return res.status(400).json({ error: `line too long (max ${MAX_LINE} chars)` });
   try { await rpc('bot_office_push', { p_bot: bot, p_state: state, p_line: line, p_priority: priority }); return res.status(200).json({ ok: true }); }
   catch { return res.status(502).json({ error: 'store failed' }); }
