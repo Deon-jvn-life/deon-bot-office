@@ -647,41 +647,30 @@ flush();
 
 // ---------- characters ----------
 const GEO = {
-  leg: new THREE.CapsuleGeometry(0.062, 0.22, 3, 8),
-  arm: new THREE.CapsuleGeometry(0.048, 0.24, 3, 8),
-  torso: new THREE.CapsuleGeometry(0.15, 0.2, 4, 12),
-  head: new THREE.SphereGeometry(0.156, 20, 16),
-  eye: new THREE.SphereGeometry(0.026, 14, 10),
-  smile: new THREE.TorusGeometry(0.02, 0.0022, 5, 12, Math.PI * 0.42),
+  leg: new THREE.CapsuleGeometry(0.055, 0.12, 4, 8),
+  arm: new THREE.CapsuleGeometry(0.04, 0.1, 4, 8),
+  torso: new THREE.SphereGeometry(0.22, 22, 16),
+  head: new THREE.SphereGeometry(0.22, 28, 20),
+  eye: new THREE.SphereGeometry(0.045, 16, 12),
+  cheek: new THREE.SphereGeometry(0.028, 10, 8),
 };
-function screenShape() {
-  const w = 0.2, h = 0.128, r = 0.04;
-  const s = new THREE.Shape();
-  const x = -w / 2, y = -h / 2;
-  s.moveTo(x + r, y);
-  s.lineTo(x + w - r, y); s.quadraticCurveTo(x + w, y, x + w, y + r);
-  s.lineTo(x + w, y + h - r); s.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
-  s.lineTo(x + r, y + h); s.quadraticCurveTo(x, y + h, x, y + h - r);
-  s.lineTo(x, y + r); s.quadraticCurveTo(x, y, x + r, y);
-  return s;
-}
-GEO.screen = new THREE.ExtrudeGeometry(screenShape(), { depth: 0.012, bevelEnabled: false, curveSegments: 6 });
-const faceScreenMat = lambert('#12171c');
+const headMat = new THREE.MeshStandardMaterial({ color: '#f6f3ee', roughness: 0.42, metalness: 0 });
+const cheekMat = lambert('#f3b7b2');
 const eyes = [];
 function makeTag(shortName, fullName) {
   const el = document.createElement('div'); el.className = 'tag';
   el.innerHTML = '<span class="q"></span><span class="short"></span><span class="full"></span><span class="ln"></span>';
   el.querySelector('.short').textContent = shortName; el.querySelector('.full').textContent = fullName;
   el.addEventListener('click', () => el.classList.toggle('open'));
-  const tag = new CSS2DObject(el); tag.position.set(0, 1.46, 0);
+  const tag = new CSS2DObject(el); tag.position.set(0, 1.18, 0);
   return { el, tag };
 }
 function accessory(kind) {
   const g = new THREE.Group(); const dark = lambert('#3a3e44'), light = lambert('#d8d2c4');
   const add = (geo, mat, x, y, z, rx = 0, ry = 0, rz = 0) => { const m = new THREE.Mesh(geo, mat); m.position.set(x, y, z); m.rotation.set(rx, ry, rz); m.castShadow = true; g.add(m); };
   switch (kind) {
-    case 'headset': add(new THREE.TorusGeometry(0.16, 0.022, 8, 20, Math.PI), dark, 0, 1.06, 0, 0, Math.PI / 2, 0); add(new THREE.SphereGeometry(0.045, 8, 6), dark, 0.15, 0.98, 0); add(new THREE.SphereGeometry(0.045, 8, 6), dark, -0.15, 0.98, 0); return { g, on: 'body' };
-    case 'tophat': add(new THREE.CylinderGeometry(0.11, 0.11, 0.18, 16), dark, 0, 1.32, 0); add(new THREE.CylinderGeometry(0.18, 0.18, 0.025, 16), dark, 0, 1.22, 0); add(new THREE.CylinderGeometry(0.112, 0.112, 0.035, 16), lambert('#a8873a'), 0, 1.25, 0); return { g, on: 'body' };
+    case 'headset': add(new THREE.TorusGeometry(0.2, 0.02, 8, 20, Math.PI), dark, 0, 0.84, 0, 0, Math.PI / 2, 0); add(new THREE.SphereGeometry(0.04, 8, 6), dark, 0.18, 0.76, 0); add(new THREE.SphereGeometry(0.04, 8, 6), dark, -0.18, 0.76, 0); return { g, on: 'body' };
+    case 'tophat': add(new THREE.CylinderGeometry(0.1, 0.1, 0.16, 16), dark, 0, 1.12, 0); add(new THREE.CylinderGeometry(0.17, 0.17, 0.025, 16), dark, 0, 1.02, 0); add(new THREE.CylinderGeometry(0.102, 0.102, 0.03, 16), lambert('#a8873a'), 0, 1.05, 0); return { g, on: 'body' };
     case 'binoculars': add(new THREE.CylinderGeometry(0.035, 0.04, 0.1, 10), dark, 0.045, 0, 0, Math.PI / 2); add(new THREE.CylinderGeometry(0.035, 0.04, 0.1, 10), dark, -0.045, 0, 0, Math.PI / 2); return { g, on: 'chest' };
     case 'cable': add(new THREE.TorusGeometry(0.08, 0.02, 8, 16), lambert('#2f3a33'), 0, 0, 0, 0, Math.PI / 2); return { g, on: 'shoulder' };
     case 'clipboard': add(new RoundedBoxGeometry(0.14, 0.18, 0.02, 2, 0.008), lambert('#8a6a48'), 0, 0, 0); return { g, on: 'hand' };
@@ -703,40 +692,41 @@ const tagByMesh = new Map();
 function buildCharacter({ color, shortName, fullName, acc, blinkPhase = 0 }) {
   const root = new THREE.Group(); scene.add(root);
   const body = new THREE.Group(); root.add(body);
-  const shell = lambert(color), limb = lambert(mix(color, '#2c3136', 0.38));
+  const shell = lambert(color), limb = lambert(mix(color, '#ffffff', 0.12));
   const legL = new THREE.Group(), legR = new THREE.Group();
-  legL.position.set(-0.09, 0.42, 0); legR.position.set(0.09, 0.42, 0);
-  const lm = new THREE.Mesh(GEO.leg, limb); lm.position.y = -0.17; lm.castShadow = true;
-  const rm = new THREE.Mesh(GEO.leg, limb); rm.position.y = -0.17; rm.castShadow = true;
+  legL.position.set(-0.09, 0.28, 0); legR.position.set(0.09, 0.28, 0);
+  const lm = new THREE.Mesh(GEO.leg, limb); lm.position.y = -0.115; lm.castShadow = true;
+  const rm = new THREE.Mesh(GEO.leg, limb); rm.position.y = -0.115; rm.castShadow = true;
   legL.add(lm); legR.add(rm); body.add(legL, legR);
-  const torso = new THREE.Mesh(GEO.torso, shell); torso.position.y = 0.66; torso.castShadow = true; body.add(torso);
-  const head = new THREE.Mesh(GEO.head, shell); head.position.y = 1.04; head.castShadow = true; body.add(head);
-  const face = new THREE.Group(); face.position.set(0, 1.08, 0.155); face.rotation.x = 0.5; body.add(face);
-  const screen = new THREE.Mesh(GEO.screen, faceScreenMat); screen.castShadow = false; screen.receiveShadow = false; face.add(screen);
-  const eyeMat = new THREE.MeshLambertMaterial({ color, emissive: color, emissiveIntensity: 0.38 });
-  const pair = [-0.046, 0.046].map((x) => {
+  const torso = new THREE.Mesh(GEO.torso, shell); torso.position.y = 0.46; torso.castShadow = true; body.add(torso);
+  const head = new THREE.Mesh(GEO.head, headMat); head.position.y = 0.78; head.castShadow = true; body.add(head);
+  const eyeMat = new THREE.MeshLambertMaterial({ color: mix(color, '#4a525c', 0.42) });
+  const pair = [-0.045, 0.05].map((x, i) => {
     const m = new THREE.Mesh(GEO.eye, eyeMat);
-    m.scale.set(1.15, 0.68, 0.42); m.position.set(x, 0.014, 0.02); m.castShadow = false; m.receiveShadow = false; face.add(m); return m;
+    m.scale.set(0.55, 1.25, 0.45); m.position.set(x, 0.07 + i * 0.012, 0.2); m.castShadow = false; m.receiveShadow = false; head.add(m); return m;
   });
-  eyes.push({ pair, phase: blinkPhase, open: 0.68 });
-  const smile = new THREE.Mesh(GEO.smile, lambert(mix(color, '#12171c', 0.62)));
-  smile.position.set(0, -0.034, 0.02); smile.rotation.z = -Math.PI * 0.71; smile.castShadow = false; smile.receiveShadow = false; face.add(smile);
+  pair.forEach((m) => { m.rotation.z = -0.38; });
+  eyes.push({ pair, phase: blinkPhase, open: 1.25 });
+  for (const sx of [-0.09, 0.1]) {
+    const cheek = new THREE.Mesh(GEO.cheek, cheekMat);
+    cheek.scale.set(1, 0.72, 0.4); cheek.position.set(sx, -0.02, 0.19); cheek.castShadow = false; cheek.receiveShadow = false; head.add(cheek);
+  }
   const armL = new THREE.Group(), armR = new THREE.Group();
-  armL.position.set(-0.21, 0.8, 0); armR.position.set(0.21, 0.8, 0);
-  const al = new THREE.Mesh(GEO.arm, limb); al.position.y = -0.16; al.castShadow = true;
-  const ar = new THREE.Mesh(GEO.arm, limb); ar.position.y = -0.16; ar.castShadow = true;
+  armL.position.set(-0.22, 0.52, 0); armR.position.set(0.22, 0.52, 0);
+  const al = new THREE.Mesh(GEO.arm, limb); al.position.y = -0.09; al.castShadow = true;
+  const ar = new THREE.Mesh(GEO.arm, limb); ar.position.y = -0.09; ar.castShadow = true;
   armL.add(al); armR.add(ar); body.add(armL, armR);
   const item = accessory(acc || 'book');
   if (item.on === 'body') body.add(item.g);
-  else if (item.on === 'chest') { item.g.position.set(0, 0.68, 0.18); body.add(item.g); }
-  else if (item.on === 'shoulder') { item.g.position.set(-0.2, 0.86, 0); body.add(item.g); }
-  else { item.g.position.set(0, -0.36, 0.05); armR.add(item.g); }
-  if (acc === 'tophat') { const globe = accessory('globe'); globe.g.position.set(0, -0.36, 0.05); armL.add(globe.g); }
-  if (acc === 'headset') { const marker = accessory('marker'); marker.g.position.set(0.02, -0.38, 0.05); armR.add(marker.g); }
-  const folder = new THREE.Mesh(new RoundedBoxGeometry(0.22, 0.028, 0.16, 2, 0.01), lambert('#c9a970'));
-  folder.position.set(0, 0.7, 0.2); folder.visible = false; folder.castShadow = true; body.add(folder);
-  const errMark = new THREE.Mesh(new THREE.SphereGeometry(0.055, 10, 8), lambert('#c0504a'));
-  errMark.position.set(0, 1.34, 0); errMark.visible = false; body.add(errMark);
+  else if (item.on === 'chest') { item.g.position.set(0, 0.5, 0.2); body.add(item.g); }
+  else if (item.on === 'shoulder') { item.g.position.set(-0.2, 0.58, 0); body.add(item.g); }
+  else { item.g.position.set(0, -0.2, 0.04); armR.add(item.g); }
+  if (acc === 'tophat') { const globe = accessory('globe'); globe.g.position.set(0, -0.2, 0.04); armL.add(globe.g); }
+  if (acc === 'headset') { const marker = accessory('marker'); marker.g.position.set(0.02, -0.22, 0.04); armR.add(marker.g); }
+  const folder = new THREE.Mesh(new RoundedBoxGeometry(0.18, 0.026, 0.13, 2, 0.01), lambert('#c9a970'));
+  folder.position.set(0, 0.5, 0.22); folder.visible = false; folder.castShadow = true; body.add(folder);
+  const errMark = new THREE.Mesh(new THREE.SphereGeometry(0.045, 10, 8), lambert('#c0504a'));
+  errMark.position.set(0, 1.08, 0); errMark.visible = false; body.add(errMark);
   const { el, tag } = makeTag(shortName, fullName); root.add(tag);
   body.traverse((o) => { if (o.isMesh) tagByMesh.set(o, el); });
   return { root, body, legL, legR, armL, armR, head, folder, errMark, el };
@@ -783,7 +773,7 @@ function sitDeon() {
   deon.legL.rotation.x = deon.legR.rotation.x = -Math.PI / 2;
   deon.armL.rotation.x = deon.armR.rotation.x = -0.75;
   deon.armL.rotation.z = deon.armR.rotation.z = 0;
-  deon.body.position.y = 0.08;
+  deon.body.position.y = 0.18;
   deon.head.rotation.set(0, 0, 0);
 }
 deon.mode = 'think';
@@ -920,7 +910,7 @@ function applyPose(bot, pose, seatY = 0) {
   bot.legL.rotation.x = bot.legR.rotation.x = sit ? -Math.PI / 2 : 0;
   bot.armL.rotation.x = bot.armR.rotation.x = 0;
   bot.armL.rotation.z = bot.armR.rotation.z = 0;
-  bot.body.position.y = sit ? 0.06 + seatY : 0;
+  bot.body.position.y = sit ? 0.18 + seatY : 0;
   bot.body.position.z = sit ? 0.0 : 0;
 }
 function place(bot, t) {
