@@ -12,18 +12,18 @@ import { TEAM, LEAD_ID } from './team.js';
 const STALE_WORKING_MS = 10 * 60 * 1000;
 const WARN_SILENCE_MS = 45 * 60 * 1000;
 const POLL_MS = 20000;
-const SPINE_X = 13;
-// Drop a file here to give Deon a face. Any /avatars/<agent id>.png is picked up the same way.
+const SPINE_X = 2.7;
+// Deon's portrait swap. The eye screen stays until this file is wired onto his face.
 const DEON_AVATAR = '/avatars/deon.png';
-const avatarUrl = (id) => `/avatars/${id}.png`;
+const FX = 13.6, FZ = 9.5;
 
-const DEON = { x0: 14.05, x1: 21.45, z0: -14.75, z1: -5.05 };
-const CHIEF = { x0: 14.05, x1: 21.45, z0: -5.05, z1: 4.7 };
+const DEON = { x0: 3.85, x1: 13.52, z0: -9.2, z1: -2.7 };
+const CHIEF = { x0: 3.85, x1: 13.52, z0: -2.7, z1: 3.15 };
 const WALL_H = 3.2;
-const deonDoor = { x: 13.15, z: -9.0 };
-const chiefDoor = { x: 13.15, z: 1.05 };
-const loungeDoor = { x: -4.5, z: 5.4 };
-const breakDoor = { x: 13.15, z: 10.2 };
+const deonDoor = { x: 3.05, z: -5.35 };
+const chiefDoor = { x: 3.05, z: 0.55 };
+const loungeDoor = { x: -6.2, z: 2.35 };
+const breakDoor = { x: 2.7, z: 5.05 };
 
 // ---------- renderer ----------
 const canvas = document.getElementById('c');
@@ -48,14 +48,14 @@ scene.background = new THREE.Color('#c5d5e0');
 const camera = new THREE.PerspectiveCamera(40, innerWidth / innerHeight, 0.5, 300);
 function framing() {
   const portrait = innerHeight > innerWidth;
-  camera.position.set(portrait ? 28 : 8, portrait ? 50 : 18, portrait ? 46 : 30);
+  camera.position.set(portrait ? 0.2 : 0.15, portrait ? 28 : 17.5, portrait ? 22 : 16.8);
 }
 framing();
 const controls = new OrbitControls(camera, canvas);
-controls.target.set(1.5, 1.1, -3);
+controls.target.set(0.1, 0.35, -0.15);
 controls.enableDamping = true;
 controls.maxPolarAngle = 1.25;
-controls.minDistance = 10; controls.maxDistance = 110;
+controls.minDistance = 4; controls.maxDistance = 40;
 controls.update();
 
 const composer = new EffectComposer(renderer, new THREE.WebGLRenderTarget(innerWidth, innerHeight, { samples: 4, type: THREE.HalfFloatType }));
@@ -73,7 +73,7 @@ const sun = new THREE.DirectionalLight('#fff6ea', 1.35);
 sun.position.set(16, 32, 18);
 sun.castShadow = true;
 sun.shadow.mapSize.set(2048, 2048);
-Object.assign(sun.shadow.camera, { left: -28, right: 28, top: 24, bottom: -24, near: 1, far: 90 });
+Object.assign(sun.shadow.camera, { left: -16, right: 16, top: 14, bottom: -14, near: 1, far: 70 });
 sun.shadow.bias = -0.0004; sun.shadow.normalBias = 0.04;
 scene.add(sun);
 
@@ -98,11 +98,12 @@ const frameMat = lambert('#8e979f');
 const chairMat = lambert('#d7dde2');
 const sofaMat = lambert('#e7e2d8');
 const sofaCushion = lambert('#d5ddd4');
-const potMat = lambert('#dcc8b0');
-const leafMat = lambert('#6f9a72');
-const leafDark = lambert('#5d8662');
-const palmMat = lambert('#7ea67c');
-const trunkMat = lambert('#b08968');
+const potWhite = lambert('#e6e1d8');
+const potSand = lambert('#d9c3a6');
+const potGrey = lambert('#c5c9c6');
+const soilMat = lambert('#4a3d34');
+const trunkMat = lambert('#6b5344');
+const petiole = lambert('#3e6a46');
 const monBody = lambert('#2e343b');
 const screenMat = lambert('#46525e');
 const runnerMat = lambert('#d5dbdf');
@@ -119,11 +120,13 @@ const unitBox = new THREE.BoxGeometry(1, 1, 1);
 const plane = new THREE.PlaneGeometry(1, 1);
 const mullion = new THREE.CylinderGeometry(0.028, 0.028, 1, 8);
 const legGeo = new THREE.CylinderGeometry(0.03, 0.034, 0.72, 8);
-const puff = new THREE.SphereGeometry(0.28, 12, 10);
 const potGeo = new THREE.LatheGeometry([
-  new THREE.Vector2(0.02, 0), new THREE.Vector2(0.16, 0), new THREE.Vector2(0.2, 0.06),
-  new THREE.Vector2(0.18, 0.26), new THREE.Vector2(0.2, 0.32), new THREE.Vector2(0.13, 0.36),
-], 12);
+  new THREE.Vector2(0.01, 0), new THREE.Vector2(0.22, 0), new THREE.Vector2(0.24, 0.035),
+  new THREE.Vector2(0.18, 0.07), new THREE.Vector2(0.175, 0.34), new THREE.Vector2(0.22, 0.38),
+  new THREE.Vector2(0.22, 0.43), new THREE.Vector2(0.15, 0.43),
+], 18);
+const leafPlane = new THREE.PlaneGeometry(1, 1);
+const stemGeo = new THREE.CylinderGeometry(0.011, 0.016, 1, 6);
 const shadeGeo = new THREE.LatheGeometry([
   new THREE.Vector2(0.02, 0.16), new THREE.Vector2(0.16, 0.12), new THREE.Vector2(0.22, 0), new THREE.Vector2(0.02, 0),
 ], 12);
@@ -196,17 +199,99 @@ function addGlass(x, y, z, w, h, ry) {
 }
 function wallAlongX(z, x0, x1) { if (x1 - x0 > 0.08) addGlass((x0 + x1) / 2, WALL_H / 2, z, x1 - x0, WALL_H, 0); }
 function wallAlongZ(x, z0, z1) { if (z1 - z0 > 0.08) addGlass(x, WALL_H / 2, (z0 + z1) / 2, z1 - z0, WALL_H, Math.PI / 2); }
-function addPlant(x, z, s = 1) {
-  put(potGeo, potMat, x, 0, z, 0, 0, 0, s, s, s);
-  put(puff, leafMat, x, 0.55 * s, z, 0, 0, 0, 0.95 * s, 0.72 * s, 0.95 * s);
-  put(puff, leafMat, x + 0.16 * s, 0.78 * s, z + 0.04 * s, 0, 0, 0, 0.6 * s, 0.5 * s, 0.6 * s);
-  put(puff, leafDark, x - 0.14 * s, 0.7 * s, z - 0.05 * s, 0, 0, 0, 0.5 * s, 0.46 * s, 0.5 * s);
+function leafTexture(draw) {
+  const tex = canvasTex(256, 256, (ctx, W, H) => { ctx.clearRect(0, 0, W, H); draw(ctx, W, H); }).t;
+  return new THREE.MeshLambertMaterial({ map: tex, color: '#ffffff', side: THREE.DoubleSide, alphaTest: 0.45 });
 }
-function addPalm(x, z) {
-  put(mullion, trunkMat, x, 0.8, z, 0, 0, 0, 2.2, 1.6, 2.2);
-  put(puff, palmMat, x, 1.7, z, 0, 0, 0, 0.85, 0.4, 0.85);
-  put(puff, palmMat, x + 0.28, 1.55, z + 0.05, 0, 0, 0, 0.5, 0.24, 0.5);
-  put(puff, leafDark, x - 0.22, 1.5, z - 0.08, 0, 0, 0, 0.45, 0.22, 0.45);
+const fiddleMat = leafTexture((ctx, W, H) => {
+  ctx.fillStyle = '#2f6a3c';
+  ctx.beginPath(); ctx.moveTo(W * 0.5, H * 0.96);
+  ctx.bezierCurveTo(W * 0.78, H * 0.78, W * 0.96, H * 0.5, W * 0.72, H * 0.22);
+  ctx.bezierCurveTo(W * 0.62, H * 0.08, W * 0.54, H * 0.02, W * 0.5, H * 0.0);
+  ctx.bezierCurveTo(W * 0.46, H * 0.02, W * 0.38, H * 0.08, W * 0.28, H * 0.22);
+  ctx.bezierCurveTo(W * 0.04, H * 0.5, W * 0.22, H * 0.78, W * 0.5, H * 0.96);
+  ctx.fill();
+  ctx.strokeStyle = '#1d4a2a'; ctx.lineWidth = 4; ctx.beginPath(); ctx.moveTo(W * 0.5, H * 0.9); ctx.lineTo(W * 0.5, H * 0.08); ctx.stroke();
+});
+const fiddleMat2 = fiddleMat.clone(); fiddleMat2.color.set('#d5e4cf');
+const monsteraMat = leafTexture((ctx, W, H) => {
+  ctx.fillStyle = '#1f6a45';
+  ctx.beginPath(); ctx.moveTo(W * 0.5, H * 0.98);
+  ctx.bezierCurveTo(W * 0.95, H * 0.7, W * 0.98, H * 0.28, W * 0.62, H * 0.08);
+  ctx.quadraticCurveTo(W * 0.5, H * 0.18, W * 0.38, H * 0.08);
+  ctx.bezierCurveTo(W * 0.02, H * 0.28, W * 0.05, H * 0.7, W * 0.5, H * 0.98); ctx.fill();
+  ctx.globalCompositeOperation = 'destination-out'; ctx.fillStyle = '#000';
+  for (const [x, y, rx, ry] of [[0.32, 0.55, 0.07, 0.1], [0.68, 0.52, 0.07, 0.09], [0.38, 0.72, 0.06, 0.08], [0.62, 0.74, 0.055, 0.07], [0.5, 0.4, 0.05, 0.07]]) {
+    ctx.beginPath(); ctx.ellipse(W * x, H * y, W * rx, H * ry, 0.4, 0, 7); ctx.fill();
+  }
+  ctx.globalCompositeOperation = 'source-over';
+  ctx.strokeStyle = '#143d28'; ctx.lineWidth = 4; ctx.beginPath(); ctx.moveTo(W * 0.5, H * 0.94); ctx.lineTo(W * 0.5, H * 0.16); ctx.stroke();
+});
+const monsteraMat2 = monsteraMat.clone(); monsteraMat2.color.set('#cfe0d2');
+const snakeMat = leafTexture((ctx, W, H) => {
+  ctx.fillStyle = '#246b48';
+  ctx.beginPath(); ctx.moveTo(W * 0.5, H * 0.02); ctx.lineTo(W * 0.72, H * 0.96); ctx.lineTo(W * 0.28, H * 0.96); ctx.closePath(); ctx.fill();
+  ctx.fillStyle = '#b7c98a';
+  ctx.fillRect(W * 0.34, H * 0.2, W * 0.07, H * 0.7); ctx.fillRect(W * 0.58, H * 0.18, W * 0.06, H * 0.72);
+});
+const snakeMat2 = snakeMat.clone(); snakeMat2.color.set('#e4eed4');
+const oliveMat = leafTexture((ctx, W, H) => {
+  ctx.fillStyle = '#6d8f62';
+  ctx.beginPath(); ctx.ellipse(W * 0.5, H * 0.5, W * 0.22, H * 0.42, 0, 0, 7); ctx.fill();
+  ctx.strokeStyle = '#3e5a38'; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(W * 0.5, H * 0.12); ctx.lineTo(W * 0.5, H * 0.88); ctx.stroke();
+});
+const oliveMat2 = oliveMat.clone(); oliveMat2.color.set('#dfe8d4');
+function addLeaf(g, mat, x, y, z, rx, ry, rz, sx, sy) {
+  const m = new THREE.Mesh(leafPlane, mat);
+  m.position.set(x, y, z); m.rotation.set(rx, ry, rz); m.scale.set(sx, sy, 1);
+  m.userData.leaf = true; g.add(m);
+}
+function addStem(g, x, y, z, h, rx, rz, mat = trunkMat) {
+  const m = new THREE.Mesh(stemGeo, mat);
+  m.position.set(x, y, z); m.scale.set(1, h, 1); m.rotation.set(rx, 0, rz); g.add(m);
+}
+function addPot(g, mat, s = 1) {
+  const p = new THREE.Mesh(potGeo, mat); p.scale.set(s, s, s); g.add(p);
+  const soil = new THREE.Mesh(new THREE.CircleGeometry(0.16 * s, 14), soilMat);
+  soil.rotation.x = -Math.PI / 2; soil.position.y = 0.4 * s; soil.userData.leaf = true; g.add(soil);
+}
+function spawnPlant(g, x, z, s = 1, ry = 0) {
+  g.position.set(x, 0, z); g.scale.setScalar(s); g.rotation.y = ry;
+  g.traverse((o) => { if (o.isMesh) { o.castShadow = !o.userData.leaf; o.receiveShadow = !o.userData.leaf; } });
+  scene.add(g);
+}
+function fiddlePlant() {
+  const g = new THREE.Group(); addPot(g, potWhite, 1);
+  addStem(g, 0, 0.85, 0, 0.9, 0, 0);
+  const leaves = [[0.02, 1.35, 0.05, -0.7, 0.4, 0, 0.32, 0.46, fiddleMat], [0.16, 1.22, -0.08, -0.4, 1.1, 0.2, 0.28, 0.4, fiddleMat2], [-0.14, 1.18, 0.06, -0.5, -0.8, -0.2, 0.3, 0.42, fiddleMat], [0.08, 1.05, 0.16, -0.9, 2.2, 0.3, 0.26, 0.36, fiddleMat2], [-0.06, 0.98, -0.14, -0.6, -2.0, 0, 0.24, 0.34, fiddleMat], [0.18, 0.86, 0.02, -1.0, 0.6, 0.4, 0.22, 0.3, fiddleMat2]];
+  for (const L of leaves) addLeaf(g, L[8], L[0], L[1], L[2], L[3], L[4], L[5], L[6], L[7]);
+  return g;
+}
+function monsteraPlant() {
+  const g = new THREE.Group(); addPot(g, potSand, 0.95);
+  const leaves = [[0.05, 0.85, 0.18, -1.15, 0.3, 0, 0.42, 0.4, monsteraMat], [-0.16, 0.78, -0.05, -1.0, -0.9, 0.2, 0.38, 0.36, monsteraMat2], [0.18, 0.7, -0.1, -1.25, 1.5, -0.2, 0.36, 0.34, monsteraMat], [-0.02, 0.95, -0.16, -0.85, 2.4, 0.1, 0.34, 0.32, monsteraMat2], [0.12, 0.62, 0.16, -1.3, -1.8, 0, 0.3, 0.28, monsteraMat]];
+  for (const L of leaves) {
+    addStem(g, L[0] * 0.35, 0.55, L[2] * 0.35, 0.45, L[3] * 0.35, 0, petiole);
+    addLeaf(g, L[8], L[0], L[1], L[2], L[3], L[4], L[5], L[6], L[7]);
+  }
+  return g;
+}
+function snakePlant() {
+  const g = new THREE.Group(); addPot(g, potGrey, 0.72);
+  const blades = [[-0.05, 0.15, 0.55, snakeMat], [0.04, -0.02, 0.72, snakeMat2], [-0.01, 0.06, 0.64, snakeMat], [0.08, 0.08, 0.5, snakeMat2], [-0.08, -0.04, 0.46, snakeMat]];
+  blades.forEach(([x, z, h, mat], i) => addLeaf(g, mat, x, 0.42 + h * 0.45, z, 0.15, i * 0.4, (i - 2) * 0.08, 0.1, h));
+  return g;
+}
+function olivePlant() {
+  const g = new THREE.Group(); addPot(g, potWhite, 0.85);
+  addStem(g, 0, 0.75, 0, 0.7, 0, 0);
+  addStem(g, 0.08, 1.05, 0.02, 0.4, 0, -0.6);
+  addStem(g, -0.07, 1.02, -0.02, 0.38, 0, 0.55);
+  for (let i = 0; i < 14; i++) {
+    const a = i * 0.9, r = 0.12 + (i % 3) * 0.05, y = 1.05 + (i % 4) * 0.06;
+    addLeaf(g, i % 2 ? oliveMat : oliveMat2, Math.sin(a) * r, y, Math.cos(a) * r, -0.4, a, 0.2, 0.08, 0.16);
+  }
+  return g;
 }
 function addPendant(x, z) {
   put(mullion, metal, x, 3.45, z, 0, 0, 0, 0.7, 0.7, 0.7);
@@ -254,15 +339,15 @@ function addSofa(x, z, ry, n) {
 }
 
 // ---------- shell, floors, outside view ----------
-bar(0, -0.12, 0, 44.2, 0.24, 30.2, baseMat);
-hFloor(0, 0, 44, 30, floorMat, 0.008);
-hFloor((DEON.x0 + DEON.x1) / 2, (DEON.z0 + DEON.z1) / 2, DEON.x1 - DEON.x0 - 0.2, DEON.z1 - DEON.z0 - 0.2, woodMat, 0.02);
-hFloor((CHIEF.x0 + CHIEF.x1) / 2, (CHIEF.z0 + CHIEF.z1) / 2, CHIEF.x1 - CHIEF.x0 - 0.2, CHIEF.z1 - CHIEF.z0 - 0.2, woodMat, 0.02);
-hFloor(12.15, -1.2, 1.55, 26.5, runnerMat, 0.016);
-bar(-3.9, WALL_H / 2, -15, 35.7, WALL_H, 0.12, wallMat);
-bar(0, WALL_H / 2, 15, 43.6, WALL_H, 0.12, wallMat);
-bar(-21.85, WALL_H / 2, 0, 0.12, WALL_H, 29.8, wallMat);
-bar(21.75, WALL_H / 2, 9.85, 0.12, WALL_H, 10.1, wallMat);
+bar(0, -0.12, 0, FX * 2 + 0.3, 0.24, FZ * 2 + 0.3, baseMat);
+hFloor(0, 0, FX * 2, FZ * 2, floorMat, 0.008);
+hFloor((DEON.x0 + DEON.x1) / 2, (DEON.z0 + DEON.z1) / 2, DEON.x1 - DEON.x0 - 0.15, DEON.z1 - DEON.z0 - 0.15, woodMat, 0.02);
+hFloor((CHIEF.x0 + CHIEF.x1) / 2, (CHIEF.z0 + CHIEF.z1) / 2, CHIEF.x1 - CHIEF.x0 - 0.15, CHIEF.z1 - CHIEF.z0 - 0.15, woodMat, 0.02);
+hFloor(SPINE_X, -1.2, 1.15, FZ * 2 - 2.2, runnerMat, 0.016);
+bar((-FX + DEON.x0) / 2, WALL_H / 2, -FZ, DEON.x0 + FX, WALL_H, 0.12, wallMat);
+bar(0, WALL_H / 2, FZ, FX * 2, WALL_H, 0.12, wallMat);
+bar(-FX, WALL_H / 2, 0, 0.12, WALL_H, FZ * 2, wallMat);
+bar(FX, WALL_H / 2, (CHIEF.z1 + FZ) / 2, 0.12, WALL_H, FZ - CHIEF.z1, wallMat);
 
 const sky = canvasTex(512, 512, (ctx, W, H) => {
   const grd = ctx.createLinearGradient(0, 0, 0, H);
@@ -271,29 +356,29 @@ const sky = canvasTex(512, 512, (ctx, W, H) => {
 });
 const skyMat = lambert('#ffffff', { map: sky.t, side: THREE.DoubleSide });
 noCast.add(skyMat);
-const skyN = new THREE.Mesh(new THREE.PlaneGeometry(52, 16), skyMat); skyN.position.set(16, 7.2, -29); scene.add(skyN);
-const skyE = new THREE.Mesh(new THREE.PlaneGeometry(36, 16), skyMat); skyE.position.set(40, 7.2, -2); skyE.rotation.y = -Math.PI / 2; scene.add(skyE);
-hFloor(22, -22.2, 36, 7.2, sandMat, -0.03);
-hFloor(24, -26.2, 40, 7.5, waterMat, -0.06);
-hFloor(31, -4, 16, 22, sandMat, -0.03);
-hFloor(36.5, -4, 8, 24, waterMat, -0.06);
-const towers = [[16, -17.2, 2.4, 2.2, 6.5], [19.6, -18.4, 1.7, 1.7, 10.5], [23.2, -17.4, 2.8, 2.2, 4.8], [27.4, -18.8, 1.8, 1.8, 8.2], [13.2, -16.6, 3.2, 1.5, 2.4], [31, -17.2, 3.6, 1.8, 3.2], [25.5, -8.5, 1.8, 1.8, 6.4], [28.2, -12.2, 1.5, 1.5, 8.8], [24.2, -4.5, 2.6, 2, 3.6]];
+const skyN = new THREE.Mesh(new THREE.PlaneGeometry(36, 14), skyMat); skyN.position.set(6, 6.2, -18); scene.add(skyN);
+const skyE = new THREE.Mesh(new THREE.PlaneGeometry(24, 14), skyMat); skyE.position.set(24, 6.2, -1); skyE.rotation.y = -Math.PI / 2; scene.add(skyE);
+hFloor(8, -13.2, 22, 5.2, sandMat, -0.03);
+hFloor(8, -16.4, 26, 4.6, waterMat, -0.06);
+hFloor(18, -2, 8, 16, sandMat, -0.03);
+hFloor(21.5, -2, 4, 16, waterMat, -0.06);
+const towers = [[5.5, -11.4, 1.6, 1.5, 4.2], [8.2, -12.2, 1.2, 1.2, 7.2], [10.6, -11.3, 1.8, 1.4, 3.4], [13.2, -12.4, 1.3, 1.3, 5.6], [3.2, -11.0, 2.2, 1.1, 2.2], [16.2, -6.5, 1.3, 1.3, 4.8], [17.4, -3.2, 1.6, 1.4, 3.1]];
 towers.forEach((t, i) => bar(t[0], t[4] / 2, t[1], t[2], t[4], t[3], towerMats[i % towerMats.length]));
-addPalm(11.5, -16.4); addPalm(24.6, -16.2); addPalm(26.2, -6.4);
+spawnPlant(olivePlant(), 7.4, -10.8, 0.85, 0.4);
 
 // ---------- glass offices ----------
 wallAlongX(DEON.z0, DEON.x0, DEON.x1);
 wallAlongZ(DEON.x1, DEON.z0, DEON.z1);
-wallAlongZ(DEON.x0, DEON.z0, -10.35);
-wallAlongZ(DEON.x0, -7.65, DEON.z1);
+wallAlongZ(DEON.x0, DEON.z0, -5.9);
+wallAlongZ(DEON.x0, -4.75, DEON.z1);
 wallAlongX(DEON.z1, DEON.x0, DEON.x1);
 wallAlongZ(CHIEF.x1, CHIEF.z0, CHIEF.z1);
-wallAlongZ(CHIEF.x0, CHIEF.z0, 0.15);
-wallAlongZ(CHIEF.x0, 1.95, CHIEF.z1);
+wallAlongZ(CHIEF.x0, CHIEF.z0, 0.1);
+wallAlongZ(CHIEF.x0, 1.05, CHIEF.z1);
 wallAlongX(CHIEF.z1, CHIEF.x0, CHIEF.x1);
 for (const x of [DEON.x0, DEON.x1]) for (const z of [DEON.z0, DEON.z1]) post(x, z);
 for (const x of [CHIEF.x0, CHIEF.x1]) post(x, CHIEF.z1);
-post(CHIEF.x0, 0.15); post(CHIEF.x0, 1.95); post(DEON.x0, -10.35); post(DEON.x0, -7.65);
+post(CHIEF.x0, 0.1); post(CHIEF.x0, 1.05); post(DEON.x0, -5.9); post(DEON.x0, -4.75);
 railX((DEON.x0 + DEON.x1) / 2, WALL_H, DEON.z0, DEON.x1 - DEON.x0);
 railX((DEON.x0 + DEON.x1) / 2, WALL_H, DEON.z1, DEON.x1 - DEON.x0);
 railZ(DEON.x1, WALL_H, (DEON.z0 + DEON.z1) / 2, DEON.z1 - DEON.z0);
@@ -303,66 +388,180 @@ railX((CHIEF.x0 + CHIEF.x1) / 2, WALL_H, CHIEF.z1, CHIEF.x1 - CHIEF.x0);
 // ---------- desks: chief is private; the other 13 are re-spaced in the open plan ----------
 const seats = [];
 const spots = {};
-const COLS = [-16, -10.5, -5, 0.5, 6];
-const SIT_ROWS = [-10, -5, -0.2];
+const COLS = [-10.4, -7.6, -4.8, -2.0, 0.8];
+const SIT_ROWS = [-6.2, -3.3, -0.4];
 const deptBots = TEAM.filter((b) => b.id !== LEAD_ID);
 deptBots.forEach((b, i) => {
   const row = Math.floor(i / 5);
   const col = row < 2 ? i % 5 : (i % 5) + 1;
   const sx = COLS[col], sz = SIT_ROWS[row], ry = Math.PI;
   const sit = addWorkstation(sx, sz, ry);
-  const door = { x: sx, z: sz + 1.35 };
-  spots[b.id] = { desk: { ...sit, door }, deskStand: { x: sx + 0.65, z: sz + 0.1, ry, pose: 'stand', door } };
+  const door = { x: sx, z: sz + 1.15 };
+  spots[b.id] = { desk: { ...sit, door }, deskStand: { x: sx + 0.5, z: sz + 0.05, ry, pose: 'stand', door } };
   const rug = lambert(mix(b.color, '#d9d3cb', 0.86));
-  hFloor(sx, sz - 0.35, 3.3, 2.7, rug, 0.015);
+  hFloor(sx, sz - 0.25, 2.35, 2.05, rug, 0.015);
 });
-const chiefWork = addWorkstation(18.05, -2.15, 0);
+const chiefWork = addWorkstation(6.9, -1.25, 0);
 spots[LEAD_ID] = {
   desk: { ...chiefWork, door: chiefDoor },
-  deskStand: { x: 16.55, z: -2.15, ry: 0, pose: 'stand', door: chiefDoor },
+  deskStand: { x: 5.55, z: -1.25, ry: 0, pose: 'stand', door: chiefDoor },
 };
-const chiefIdle = { x: 16.15, z: 3.2, ry: 0, pose: 'sit', seatY: 0.05, door: chiefDoor };
+const chiefIdle = { x: 5.05, z: 2.15, ry: 0, pose: 'sit', seatY: 0.05, door: chiefDoor };
 addChair(chiefIdle.x, chiefIdle.z, chiefIdle.ry, lambert('#e7d3b8'), 0.42);
-addWorkstation(18.15, -12.45, 0);
-hFloor(18.1, -11.6, 3.6, 3.2, runnerMat, 0.03);
-hFloor(17.2, 0.4, 4.2, 3.4, runnerMat, 0.03);
+const chiefBoard = { x: 8.7, z: -1.95, ry: Math.PI, pose: 'stand', door: chiefDoor };
+const boardCanvas = canvasTex(640, 360);
+const boardMat = new THREE.MeshLambertMaterial({ map: boardCanvas.t, color: '#f4f3ef' });
+const boardMesh = new THREE.Mesh(new THREE.PlaneGeometry(2.55, 1.42), boardMat);
+boardMesh.position.set(8.7, 1.72, CHIEF.z0 + 0.1); boardMesh.castShadow = false; scene.add(boardMesh);
+bar(8.7, 1.72, CHIEF.z0 + 0.04, 2.75, 1.62, 0.05, frameMat);
+const boardInk = [];
+let boardPen = null, boardTick = 0;
+function stepBoard(dt, active) {
+  if (!active) return;
+  boardTick += dt;
+  if (boardTick < 0.045) return;
+  boardTick = 0;
+  if (!boardPen) {
+    if (boardInk.length > 8) boardInk.length = 0;
+    boardPen = { x: 80 + Math.random() * 480, y: 36 + Math.random() * 270, n: 0, pts: [] };
+    boardInk.push(boardPen.pts);
+  }
+  boardPen.x = Math.max(28, Math.min(612, boardPen.x + (Math.random() - 0.42) * 26));
+  boardPen.y = Math.max(22, Math.min(338, boardPen.y + (Math.random() - 0.5) * 14));
+  boardPen.pts.push(boardPen.x, boardPen.y);
+  if (++boardPen.n > 16 + Math.random() * 22) boardPen = null;
+  const c = boardCanvas.ctx;
+  c.fillStyle = '#f7f6f2'; c.fillRect(0, 0, 640, 360);
+  c.strokeStyle = '#31425c'; c.lineWidth = 3.2; c.lineCap = 'round'; c.lineJoin = 'round';
+  for (const pts of boardInk) {
+    if (pts.length < 4) continue;
+    c.beginPath(); c.moveTo(pts[0], pts[1]);
+    for (let i = 2; i < pts.length; i += 2) c.lineTo(pts[i], pts[i + 1]);
+    c.stroke();
+  }
+  boardCanvas.t.needsUpdate = true;
+}
+addWorkstation(6.85, -7.45, 0);
+hFloor(6.9, -6.6, 2.6, 2.3, runnerMat, 0.03);
+hFloor(6.6, 0.2, 3.1, 2.4, runnerMat, 0.03);
 
-const waitSpots = [];
-for (let i = 0; i < 14; i++) {
-  const col = i % 7, row = Math.floor(i / 7);
-  const x = 15.35 + col * 0.88, z = -9.65 + row * 1.15;
-  waitSpots.push({ x, z, ry: Math.PI, pose: 'stand', door: deonDoor });
+const waitSpots = [-8.35, -7.8, -7.25, -6.7, -6.15, -4.4, -3.85, -3.3]
+  .map((z) => ({ x: 3.05, z, ry: Math.PI / 2, pose: 'stand', door: { x: 2.35, z } }))
+  .sort((a, b) => Math.abs(a.z + 5.35) - Math.abs(b.z + 5.35));
+bar(3.42, 0.52, -7.25, 0.36, 1.02, 2.45, deskMat);
+bar(3.42, 0.52, -3.85, 0.36, 1.02, 1.35, deskMat);
+for (const spot of waitSpots) {
+  put(new THREE.CylinderGeometry(0.12, 0.12, 0.06, 12), chairMat, spot.x, 0.46, spot.z);
+  put(new THREE.CylinderGeometry(0.03, 0.03, 0.42, 8), metal, spot.x, 0.21, spot.z);
 }
 const handoffSpots = [];
 for (let i = 0; i < 13; i++) {
   const col = i % 5, row = Math.floor(i / 5);
-  handoffSpots.push({ x: 15.45 + col * 0.9, z: 0.2 + row * 0.85, ry: Math.PI, pose: 'stand', carry: true, door: chiefDoor });
+  handoffSpots.push({ x: 4.7 + col * 0.78, z: 0.25 + row * 0.62, ry: Math.PI, pose: 'stand', carry: true, door: chiefDoor });
 }
 
 // ---------- lounge, break room, lab ----------
-const lounge = { x: -4.5, z: 8.5 };
-hFloor(lounge.x, lounge.z, 8.4, 6.4, lambert('#cbb9a4'), 0.014);
-addSofa(lounge.x, lounge.z - 1.7, 0, 4);
-addSofa(lounge.x, lounge.z + 1.7, Math.PI, 4);
-addSofa(lounge.x - 3.15, lounge.z, Math.PI / 2, 2);
-bar(lounge.x, 0.32, lounge.z, 1.5, 0.28, 0.8, oak);
-addPlant(lounge.x + 3.5, lounge.z - 2.5, 1.05);
-addPlant(lounge.x - 3.6, lounge.z + 2.4, 0.9);
+const lounge = { x: -6.2, z: 5.5 };
+hFloor(lounge.x, lounge.z, 6.6, 5.2, lambert('#cbb9a4'), 0.014);
+addSofa(lounge.x, lounge.z - 1.45, 0, 4);
+addSofa(lounge.x, lounge.z + 1.45, Math.PI, 4);
+addSofa(lounge.x - 2.55, lounge.z, Math.PI / 2, 2);
+bar(lounge.x, 0.32, lounge.z, 1.2, 0.26, 0.7, oak);
+spawnPlant(monsteraPlant(), -3.15, 3.55, 1.05, 0.4);
+spawnPlant(snakePlant(), lounge.x - 3.3, lounge.z + 1.6, 1, -0.4);
 addPendant(lounge.x, lounge.z);
 
-const br = { x: 16.8, z: 11.2 };
+const br = { x: 11.7, z: 6.55 };
 hFloor(br.x, br.z, 8.2, 6.2, lambert('#e3d3bf'), 0.014);
 put(new THREE.CylinderGeometry(0.78, 0.78, 0.06, 24), oak, br.x, 0.74, br.z);
 put(new THREE.CylinderGeometry(0.055, 0.07, 0.7, 10), metal, br.x, 0.36, br.z);
 for (let i = 0; i < 6; i++) {
-  const a = (i / 6) * Math.PI * 2, x = br.x + Math.sin(a) * 1.65, z = br.z + Math.cos(a) * 1.65;
+  const a = (i / 6) * Math.PI * 2, x = br.x + Math.sin(a) * 1.15, z = br.z + Math.cos(a) * 1.15;
   const ry = Math.atan2(br.x - x, br.z - z);
   addChair(x, z, ry);
   seats.push({ x, z, ry, pose: 'sit', seatY: 0, door: breakDoor });
 }
-bar(20.3, 0.5, 13.55, 2.4, 0.9, 0.55, deskMat);
-addPlant(14.6, 13.4, 0.95);
+bar(12.7, 0.48, 8.7, 1.5, 0.86, 0.5, deskMat);
+spawnPlant(olivePlant(), 10.2, 8.15, 0.9, 0.2);
 addPendant(br.x, br.z);
+const gymStations = [
+  { kind: 'lift', x: -1.9, z: 8.15, ry: 0 },
+  { kind: 'bike', x: -0.85, z: 8.15, ry: Math.PI },
+  { kind: 'run', x: 0.25, z: 8.15, ry: 0 },
+  { kind: 'swim', x: 1.2, z: 8.45, ry: Math.PI / 2 },
+];
+hFloor(-0.3, 8.2, 4.2, 2.2, lambert('#d5ddd8'), 0.012);
+{
+  const g = new THREE.Group();
+  const frame = lambert('#8d949b'), water = lambert('#7fa8b4'), belt = lambert('#4d555c');
+  const add = (geo, mat, x, y, z, rx = 0, ry = 0, rz = 0) => { const m = new THREE.Mesh(geo, mat); m.position.set(x, y, z); m.rotation.set(rx, ry, rz); m.castShadow = true; m.receiveShadow = true; g.add(m); };
+  add(new THREE.BoxGeometry(0.7, 0.7, 0.08), frame, -1.9, 0.45, 8.55);
+  for (const y of [0.35, 0.55]) add(new THREE.CylinderGeometry(0.012, 0.012, 0.22, 6), metal, -1.9, y, 8.48, 0, 0, Math.PI / 2);
+  add(new THREE.CylinderGeometry(0.22, 0.22, 0.04, 14), frame, -0.85, 0.28, 8.15, Math.PI / 2);
+  add(new THREE.CylinderGeometry(0.08, 0.08, 0.04, 10), frame, -0.85, 0.62, 7.85, Math.PI / 2);
+  add(new THREE.BoxGeometry(0.06, 0.45, 0.5), frame, -0.85, 0.4, 8.0);
+  add(new RoundedBoxGeometry(0.22, 0.05, 0.16, 2, 0.02), chairMat, -0.85, 0.62, 8.2);
+  add(new RoundedBoxGeometry(0.85, 0.12, 0.42, 2, 0.03), belt, 0.25, 0.16, 8.15);
+  add(new THREE.BoxGeometry(0.08, 0.7, 0.42), frame, 0.62, 0.5, 8.15);
+  add(new RoundedBoxGeometry(1.15, 0.28, 0.62, 2, 0.06), lambert('#c5d0d4'), 1.2, 0.16, 8.45);
+  const pool = new THREE.Mesh(new THREE.PlaneGeometry(1.0, 0.48), water);
+  pool.rotation.x = -Math.PI / 2; pool.position.set(1.2, 0.31, 8.45); pool.castShadow = false; g.add(pool);
+  scene.add(g);
+}
+const GYM_MS = 3 * 60 * 1000;
+let gymId = null;
+function gymChoice(now) {
+  const idle = [...bots.values()].filter((b) => b.state === 'idle').map((b) => b.b.id).sort();
+  if (!idle.length) return null;
+  const wheel = [];
+  for (const id of idle) { wheel.push(id); if (id === NORSE_ID) wheel.push(id, id); }
+  const slot = Math.floor(now / GYM_MS);
+  return { id: wheel[slot % wheel.length], kind: ['lift', 'bike', 'run', 'swim'][slot % 4] };
+}
+function syncGym(now, t) {
+  const choice = gymChoice(now);
+  const next = choice && choice.id;
+  if (gymId && gymId !== next) {
+    const prev = bots.get(gymId);
+    if (prev && prev.state === 'idle' && !prev.walking && prev.target) { prev.body.rotation.x = 0; place(prev, prev.target); }
+  }
+  gymId = next;
+  if (!choice) return;
+  const bot = bots.get(choice.id);
+  if (!bot || bot.state !== 'idle' || bot.walking) return;
+  const st = gymStations.find((s) => s.kind === choice.kind);
+  bot.root.position.set(st.x, 0, st.z);
+  bot.root.rotation.y = st.ry;
+  const s = Math.sin(t * (choice.kind === 'run' ? 10 : 6));
+  if (choice.kind === 'lift') {
+    applyPose(bot, 'stand');
+    const up = (Math.sin(t * 2.2) + 1) / 2;
+    bot.armL.rotation.x = -0.35 - up * 1.7;
+    bot.armR.rotation.x = -0.35 - up * 1.7;
+    bot.body.position.y = up * 0.05;
+  } else if (choice.kind === 'bike') {
+    applyPose(bot, 'sit', 0.1);
+    bot.legL.rotation.x = -0.35 + s * 0.7;
+    bot.legR.rotation.x = -0.35 - s * 0.7;
+    bot.armL.rotation.x = -0.85;
+    bot.armR.rotation.x = -0.85;
+  } else if (choice.kind === 'run') {
+    applyPose(bot, 'stand');
+    bot.legL.rotation.x = s * 0.85;
+    bot.legR.rotation.x = -s * 0.85;
+    bot.armL.rotation.x = -s * 0.55;
+    bot.armR.rotation.x = s * 0.55;
+    bot.body.position.y = Math.abs(s) * 0.04;
+  } else {
+    applyPose(bot, 'stand');
+    bot.body.rotation.x = 1.15;
+    bot.body.position.y = -0.02;
+    bot.armL.rotation.x = s * 0.9;
+    bot.armR.rotation.x = -s * 0.9;
+    bot.legL.rotation.x = -s * 0.35;
+    bot.legR.rotation.x = s * 0.35;
+  }
+}
 
 const screens = [];
 function bigScreen(x, z, ry, kind) {
@@ -375,11 +574,10 @@ function bigScreen(x, z, ry, kind) {
   m.position.set(0, 1.65, 0.05); m.castShadow = false; g.add(m);
   screens.push({ kind, ...ct });
 }
-bigScreen(-19.2, 8.2, 0.5, 'chart');
-bigScreen(-16.2, 6.6, 0, 'map');
-bigScreen(-13.2, 8.2, -0.5, 'terminal');
-bar(-16.2, 0.74, 10.1, 2.2, 0.06, 0.9, deskMat);
-addPlant(-20.4, 11.6, 1.1); addPlant(-12.2, 11.4, 0.85);
+bigScreen(-12.3, 7.15, 0.45, 'chart');
+bigScreen(-12.2, 5.15, 0.15, 'map');
+bar(-11.6, 0.74, 6.2, 1.6, 0.06, 0.7, deskMat);
+spawnPlant(fiddlePlant(), -10.6, 7.55, 0.95, 0.8);
 
 const leds = [];
 function addRack(x, z) {
@@ -391,19 +589,20 @@ function addRack(x, z) {
     leds.push({ m: mat, phase: k * 1.3, rate: 0.8 + k * 0.35 });
   }
 }
-addRack(-21.2, -8.5); addRack(-21.2, -7.1);
+addRack(-13.15, -5.4); addRack(-13.15, -4.15);
 
-addPlant(-18.5, -13.2, 1.15); addPlant(-8.2, -13.4, 0.9); addPlant(6.5, -12.6, 1);
-addPlant(20.5, -13.6, 0.95); addPlant(20.4, 3.5, 0.85); addPlant(8.2, 4.2, 1);
-addPendant(18.15, -11.3); addPendant(18.05, -1.0); addPendant(-8, -6); addPendant(0.5, -6); addPendant(-16, 9);
+spawnPlant(snakePlant(), -11.6, -8.15, 0.9, 0.3);
+spawnPlant(fiddlePlant(), 9.55, -8.35, 0.9, -0.5);
+spawnPlant(snakePlant(), 9.45, 2.25, 0.85, 0.4);
+addPendant(6.9, -6.5); addPendant(6.9, -0.4); addPendant(-6, -4.5); addPendant(-2, -4.5);
 
 // ---------- usage board (real stored reading only) ----------
 const usage = canvasTex(1024, 512);
 usage.t.anisotropy = MAX_ANISO;
 const usageMat = new THREE.MeshBasicMaterial({ map: usage.t, toneMapped: true, color: '#dedede' });
-const usageMesh = new THREE.Mesh(new THREE.PlaneGeometry(10.4, 3.15), usageMat);
-usageMesh.position.set(-8.6, 2.05, -14.78); scene.add(usageMesh);
-bar(-8.6, 2.05, -14.9, 10.7, 3.4, 0.06, frameMat);
+const usageMesh = new THREE.Mesh(new THREE.PlaneGeometry(7.2, 2.35), usageMat);
+usageMesh.position.set(-4.6, 1.85, -FZ + 0.22); scene.add(usageMesh);
+bar(-4.6, 1.85, -FZ + 0.12, 7.5, 2.6, 0.06, frameMat);
 const usageMain = document.getElementById('usage-main');
 const usageSub = document.getElementById('usage-sub');
 const usageMeter = document.getElementById('usage-meter');
@@ -452,40 +651,26 @@ const GEO = {
   arm: new THREE.CapsuleGeometry(0.048, 0.24, 3, 8),
   torso: new THREE.CapsuleGeometry(0.15, 0.2, 4, 12),
   head: new THREE.SphereGeometry(0.156, 20, 16),
-  face: new THREE.PlaneGeometry(0.2, 0.138),
-  bezel: new THREE.PlaneGeometry(0.228, 0.166),
+  eye: new THREE.SphereGeometry(0.026, 14, 10),
+  smile: new THREE.TorusGeometry(0.02, 0.0022, 5, 12, Math.PI * 0.42),
 };
-function initials(label) {
-  const parts = String(label).trim().split(/\s+/).filter(Boolean);
-  if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase();
-  return String(label).slice(0, 2).toUpperCase();
+function screenShape() {
+  const w = 0.2, h = 0.128, r = 0.04;
+  const s = new THREE.Shape();
+  const x = -w / 2, y = -h / 2;
+  s.moveTo(x + r, y);
+  s.lineTo(x + w - r, y); s.quadraticCurveTo(x + w, y, x + w, y + r);
+  s.lineTo(x + w, y + h - r); s.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+  s.lineTo(x + r, y + h); s.quadraticCurveTo(x, y + h, x, y + h - r);
+  s.lineTo(x, y + r); s.quadraticCurveTo(x, y, x + r, y);
+  return s;
 }
-function fallbackFace(label, accent) {
-  const { t } = canvasTex(256, 256, (ctx) => {
-    ctx.fillStyle = '#141a20'; ctx.fillRect(0, 0, 256, 256);
-    ctx.fillStyle = '#1c2630'; ctx.beginPath();
-    const r = 40, x0 = 22, y0 = 22, w = 212, h = 212;
-    ctx.moveTo(x0 + r, y0); ctx.arcTo(x0 + w, y0, x0 + w, y0 + h, r); ctx.arcTo(x0 + w, y0 + h, x0, y0 + h, r); ctx.arcTo(x0, y0 + h, x0, y0, r); ctx.arcTo(x0, y0, x0 + w, y0, r);
-    ctx.closePath(); ctx.fill();
-    ctx.fillStyle = accent; ctx.beginPath(); ctx.arc(96, 112, 15, 0, Math.PI * 2); ctx.arc(160, 112, 15, 0, Math.PI * 2); ctx.fill();
-    ctx.fillStyle = '#141a20'; ctx.beginPath(); ctx.arc(96, 112, 5.5, 0, Math.PI * 2); ctx.arc(160, 112, 5.5, 0, Math.PI * 2); ctx.fill();
-    ctx.fillStyle = accent; ctx.font = '600 52px system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-    ctx.fillText(initials(label), 128, 176);
-  });
-  return t;
-}
-const texLoader = new THREE.TextureLoader();
-function applyAvatar(material, url) {
-  texLoader.load(url, (tex) => {
-    tex.colorSpace = THREE.SRGBColorSpace;
-    tex.anisotropy = MAX_ANISO;
-    tex.minFilter = THREE.LinearMipmapLinearFilter; tex.magFilter = THREE.LinearFilter; tex.generateMipmaps = true;
-    material.map = tex; material.needsUpdate = true;
-  });
-}
+GEO.screen = new THREE.ExtrudeGeometry(screenShape(), { depth: 0.012, bevelEnabled: false, curveSegments: 6 });
+const faceScreenMat = lambert('#12171c');
+const eyes = [];
 function makeTag(shortName, fullName) {
   const el = document.createElement('div'); el.className = 'tag';
-  el.innerHTML = '<span class="short"></span><span class="full"></span><span class="ln"></span>';
+  el.innerHTML = '<span class="q"></span><span class="short"></span><span class="full"></span><span class="ln"></span>';
   el.querySelector('.short').textContent = shortName; el.querySelector('.full').textContent = fullName;
   el.addEventListener('click', () => el.classList.toggle('open'));
   const tag = new CSS2DObject(el); tag.position.set(0, 1.46, 0);
@@ -502,18 +687,20 @@ function accessory(kind) {
     case 'clipboard': add(new RoundedBoxGeometry(0.14, 0.18, 0.02, 2, 0.008), lambert('#8a6a48'), 0, 0, 0); return { g, on: 'hand' };
     case 'calculator': add(new RoundedBoxGeometry(0.1, 0.14, 0.025, 2, 0.008), lambert('#4a4f57'), 0, 0, 0); return { g, on: 'hand' };
     case 'book': add(new RoundedBoxGeometry(0.14, 0.18, 0.04, 2, 0.008), lambert('#8b4b45'), 0, 0, 0); return { g, on: 'hand' };
-    case 'stopwatch': add(new THREE.CylinderGeometry(0.055, 0.055, 0.028, 16), light, 0, 0, 0, Math.PI / 2); return { g, on: 'hand' };
+    case 'stopwatch': add(new THREE.CylinderGeometry(0.012, 0.012, 0.14, 8), dark, 0, 0, 0, 0, 0, Math.PI / 2); add(new THREE.SphereGeometry(0.034, 8, 6), dark, -0.07, 0, 0); add(new THREE.SphereGeometry(0.034, 8, 6), dark, 0.07, 0, 0); return { g, on: 'hand' };
+    case 'marker': add(new THREE.CylinderGeometry(0.012, 0.012, 0.12, 8), dark, 0, 0, 0); add(new THREE.CylinderGeometry(0.013, 0.013, 0.03, 8), lambert('#3fb6c6'), 0, 0.06, 0); return { g, on: 'hand' };
+    case 'globe': add(new THREE.SphereGeometry(0.055, 12, 10), lambert('#7f9a78'), 0, 0, 0); add(new THREE.TorusGeometry(0.056, 0.006, 6, 12), dark, 0, 0, 0, Math.PI / 2); return { g, on: 'hand' };
     case 'controller': add(new RoundedBoxGeometry(0.16, 0.05, 0.08, 2, 0.02), lambert('#40444b'), 0, 0, 0); return { g, on: 'hand' };
     case 'envelope': add(new RoundedBoxGeometry(0.16, 0.1, 0.012, 2, 0.006), light, 0, 0, 0); return { g, on: 'hand' };
     case 'passport': add(new RoundedBoxGeometry(0.1, 0.13, 0.018, 2, 0.006), lambert('#2d3f66'), 0, 0, 0); return { g, on: 'hand' };
     case 'briefcase': add(new RoundedBoxGeometry(0.22, 0.16, 0.07, 2, 0.015), lambert('#5a4030'), 0, -0.08, 0); return { g, on: 'hand' };
-    case 'bag': add(new RoundedBoxGeometry(0.18, 0.2, 0.09, 2, 0.02), lambert('#c9b48c'), 0, -0.1, 0); return { g, on: 'hand' };
+    case 'bag': add(new RoundedBoxGeometry(0.16, 0.12, 0.12, 2, 0.012), lambert('#d2b48a'), 0, -0.05, 0); add(new THREE.BoxGeometry(0.162, 0.012, 0.122), lambert('#c4b49a'), 0, -0.01, 0); return { g, on: 'hand' };
     case 'camera': add(new RoundedBoxGeometry(0.14, 0.09, 0.07, 2, 0.015), lambert('#33363b'), 0, 0, 0); add(new THREE.CylinderGeometry(0.03, 0.03, 0.05, 12), dark, 0, 0, 0.05, Math.PI / 2); return { g, on: 'chest' };
     default: return { g, on: 'hand' };
   }
 }
 const tagByMesh = new Map();
-function buildCharacter({ color, shortName, fullName, avatar, acc }) {
+function buildCharacter({ color, shortName, fullName, acc, blinkPhase = 0 }) {
   const root = new THREE.Group(); scene.add(root);
   const body = new THREE.Group(); root.add(body);
   const shell = lambert(color), limb = lambert(mix(color, '#2c3136', 0.38));
@@ -524,11 +711,16 @@ function buildCharacter({ color, shortName, fullName, avatar, acc }) {
   legL.add(lm); legR.add(rm); body.add(legL, legR);
   const torso = new THREE.Mesh(GEO.torso, shell); torso.position.y = 0.66; torso.castShadow = true; body.add(torso);
   const head = new THREE.Mesh(GEO.head, shell); head.position.y = 1.04; head.castShadow = true; body.add(head);
-  const bezel = new THREE.Mesh(GEO.bezel, lambert(mix(color, '#14181c', 0.8)));
-  bezel.position.set(0, 1.1, 0.16); bezel.rotation.x = 0.62; bezel.castShadow = false; body.add(bezel);
-  const faceMat = new THREE.MeshBasicMaterial({ map: fallbackFace(shortName, color), color: '#f2f2f2', toneMapped: true, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 });
-  const face = new THREE.Mesh(GEO.face, faceMat); face.position.set(0, 1.12, 0.2); face.rotation.x = 0.62; face.castShadow = false; face.receiveShadow = false; body.add(face);
-  applyAvatar(faceMat, avatar);
+  const face = new THREE.Group(); face.position.set(0, 1.08, 0.155); face.rotation.x = 0.5; body.add(face);
+  const screen = new THREE.Mesh(GEO.screen, faceScreenMat); screen.castShadow = false; screen.receiveShadow = false; face.add(screen);
+  const eyeMat = new THREE.MeshLambertMaterial({ color, emissive: color, emissiveIntensity: 0.38 });
+  const pair = [-0.046, 0.046].map((x) => {
+    const m = new THREE.Mesh(GEO.eye, eyeMat);
+    m.scale.set(1.15, 0.68, 0.42); m.position.set(x, 0.014, 0.02); m.castShadow = false; m.receiveShadow = false; face.add(m); return m;
+  });
+  eyes.push({ pair, phase: blinkPhase, open: 0.68 });
+  const smile = new THREE.Mesh(GEO.smile, lambert(mix(color, '#12171c', 0.62)));
+  smile.position.set(0, -0.034, 0.02); smile.rotation.z = -Math.PI * 0.71; smile.castShadow = false; smile.receiveShadow = false; face.add(smile);
   const armL = new THREE.Group(), armR = new THREE.Group();
   armL.position.set(-0.21, 0.8, 0); armR.position.set(0.21, 0.8, 0);
   const al = new THREE.Mesh(GEO.arm, limb); al.position.y = -0.16; al.castShadow = true;
@@ -539,34 +731,174 @@ function buildCharacter({ color, shortName, fullName, avatar, acc }) {
   else if (item.on === 'chest') { item.g.position.set(0, 0.68, 0.18); body.add(item.g); }
   else if (item.on === 'shoulder') { item.g.position.set(-0.2, 0.86, 0); body.add(item.g); }
   else { item.g.position.set(0, -0.36, 0.05); armR.add(item.g); }
+  if (acc === 'tophat') { const globe = accessory('globe'); globe.g.position.set(0, -0.36, 0.05); armL.add(globe.g); }
+  if (acc === 'headset') { const marker = accessory('marker'); marker.g.position.set(0.02, -0.38, 0.05); armR.add(marker.g); }
   const folder = new THREE.Mesh(new RoundedBoxGeometry(0.22, 0.028, 0.16, 2, 0.01), lambert('#c9a970'));
   folder.position.set(0, 0.7, 0.2); folder.visible = false; folder.castShadow = true; body.add(folder);
   const errMark = new THREE.Mesh(new THREE.SphereGeometry(0.055, 10, 8), lambert('#c0504a'));
   errMark.position.set(0, 1.34, 0); errMark.visible = false; body.add(errMark);
   const { el, tag } = makeTag(shortName, fullName); root.add(tag);
   body.traverse((o) => { if (o.isMesh) tagByMesh.set(o, el); });
-  return { root, body, legL, legR, armL, armR, folder, errMark, el };
+  return { root, body, legL, legR, armL, armR, head, folder, errMark, el };
 }
 
 const bots = new Map();
 TEAM.forEach((b, i) => {
-  const parts = buildCharacter({ color: b.color, shortName: b.short, fullName: b.name, avatar: avatarUrl(b.id), acc: b.acc });
+  const parts = buildCharacter({ color: b.color, shortName: b.short, fullName: b.name, acc: b.acc, blinkPhase: i * 0.73 });
   bots.set(b.id, { b, i, ...parts, path: [], walking: false, target: null, state: 'idle', line: '', phase: 0 });
 });
-const deon = buildCharacter({ color: '#8e9ea3', shortName: 'Deon', fullName: 'Deon', avatar: DEON_AVATAR, acc: null });
-deon.root.position.set(18.15, 0, -12.45); deon.root.rotation.y = 0;
-deon.legL.rotation.x = deon.legR.rotation.x = -Math.PI / 2;
-deon.armL.rotation.x = deon.armR.rotation.x = -0.75;
-deon.body.position.y = 0.08;
+const deon = buildCharacter({ color: '#8e9ea3', shortName: 'Deon', fullName: 'Deon', acc: null, blinkPhase: 1.4 });
+deon.portraitUrl = DEON_AVATAR;
+const deonRoom = { x0: DEON.x0 + 0.9, x1: DEON.x1 - 0.7, z0: DEON.z0 + 0.7, z1: -6.45 };
+function deonGoal(kind) {
+  if (kind === 'sit') return { x: 6.85, z: -7.45, ry: 0, sit: true };
+  if (kind === 'window') return { x: 6.1 + Math.random() * 5.4, z: deonRoom.z0, ry: Math.PI, think: true };
+  return {
+    x: deonRoom.x0 + Math.random() * (deonRoom.x1 - deonRoom.x0),
+    z: deonRoom.z0 + Math.random() * (deonRoom.z1 - deonRoom.z0),
+    ry: Math.random() * Math.PI * 2,
+  };
+}
+function chooseDeonGoal() {
+  const r = Math.random();
+  return deonGoal(r < 0.05 ? 'sit' : r < 0.42 ? 'window' : 'wander');
+}
+function restDeon() {
+  deon.legL.rotation.x = deon.legR.rotation.x = 0;
+  deon.armL.rotation.x = deon.armR.rotation.x = 0;
+  deon.armL.rotation.z = deon.armR.rotation.z = 0;
+  deon.body.position.y = 0;
+  deon.head.rotation.set(0, 0, 0);
+}
+function thinkDeon() {
+  restDeon();
+  deon.root.rotation.y = Math.PI;
+  deon.armR.rotation.x = -2.15;
+  deon.armR.rotation.z = -0.42;
+  deon.head.rotation.z = 0.3;
+  deon.head.rotation.x = 0.12;
+}
+function sitDeon() {
+  deon.root.rotation.y = 0;
+  deon.legL.rotation.x = deon.legR.rotation.x = -Math.PI / 2;
+  deon.armL.rotation.x = deon.armR.rotation.x = -0.75;
+  deon.armL.rotation.z = deon.armR.rotation.z = 0;
+  deon.body.position.y = 0.08;
+  deon.head.rotation.set(0, 0, 0);
+}
+deon.mode = 'think';
+deon.until = 4.5;
+deon.goal = null;
+deon.walkPhase = 0;
+deon.root.position.set(8.4, 0, deonRoom.z0);
+thinkDeon();
+function stepDeon(dt) {
+  if (deon.mode !== 'walk') {
+    deon.until -= dt;
+    if (deon.until > 0) return;
+    deon.goal = chooseDeonGoal();
+    deon.mode = 'walk';
+    restDeon();
+    return;
+  }
+  const g = deon.goal, pos = deon.root.position;
+  const dx = g.x - pos.x, dz = g.z - pos.z, dist = Math.hypot(dx, dz), step = 0.62 * dt;
+  if (dist <= Math.max(step, 0.04)) {
+    pos.x = g.x; pos.z = g.z;
+    if (g.sit) { deon.mode = 'sit'; deon.until = 2.6; sitDeon(); }
+    else if (g.think) { deon.mode = 'think'; deon.until = 4.4; thinkDeon(); }
+    else { deon.mode = 'hold'; deon.until = 0.8; restDeon(); deon.root.rotation.y = Math.atan2(dx, dz); }
+    return;
+  }
+  pos.x = Math.min(deonRoom.x1, Math.max(deonRoom.x0, pos.x + (dx / dist) * step));
+  pos.z = Math.min(deonRoom.z1, Math.max(deonRoom.z0, pos.z + (dz / dist) * step));
+  const want = Math.atan2(dx, dz);
+  let dr = want - deon.root.rotation.y; dr = Math.atan2(Math.sin(dr), Math.cos(dr));
+  deon.root.rotation.y += dr * Math.min(1, dt * 6);
+  deon.walkPhase += dt * 5.5;
+  const s = Math.sin(deon.walkPhase) * 0.42;
+  deon.legL.rotation.x = s; deon.legR.rotation.x = -s;
+  deon.armL.rotation.x = -s * 0.4; deon.armR.rotation.x = s * 0.4;
+  deon.body.position.y = 0;
+  deon.head.rotation.set(0, 0, 0);
+}
 
 // ---------- placement & movement ----------
+const statusById = new Map();
+const waitingSince = new Map();
+const NORSE_ID = 'd6c82145-5a65-4faa-a9d3-441c60493abf';
+function priorityOf(status) {
+  if (!status || status.priority == null || status.priority === '') return null;
+  const n = Number(status.priority);
+  return Number.isFinite(n) ? n : null;
+}
+function noteWaiting(id, state, status) {
+  if (state !== 'waiting') { waitingSince.delete(id); return; }
+  const server = status && (status.waiting_since || (status.state === 'waiting' ? status.updated_at : null));
+  if (server) waitingSince.set(id, new Date(server).getTime());
+  else if (!waitingSince.has(id)) waitingSince.set(id, Date.now() + waitingSince.size * 0.001);
+}
+function waitingOrder() {
+  const rows = [];
+  for (const bot of bots.values()) {
+    if (bot.state !== 'waiting') continue;
+    const status = statusById.get(bot.b.id);
+    rows.push({ id: bot.b.id, chief: bot.b.id === LEAD_ID, priority: priorityOf(status), at: waitingSince.get(bot.b.id) || 0 });
+  }
+  rows.sort((a, b) => {
+    if (a.chief !== b.chief) return a.chief ? -1 : 1;
+    const ap = a.priority == null, bp = b.priority == null;
+    if (ap !== bp) return ap ? 1 : -1;
+    if (!ap && a.priority !== b.priority) return a.priority - b.priority;
+    return a.at - b.at || a.id.localeCompare(b.id);
+  });
+  return rows;
+}
+function spotForRank(i) {
+  if (i < waitSpots.length) return waitSpots[i];
+  const base = waitSpots[i % waitSpots.length];
+  return { ...base, x: base.x - 0.4 };
+}
+function syncQueue() {
+  const order = waitingOrder();
+  const queued = new Set(order.map((w) => w.id));
+  for (const bot of bots.values()) {
+    if (queued.has(bot.b.id)) continue;
+    bot.el.classList.remove('queued');
+    const badge = bot.el.querySelector('.q');
+    if (badge) badge.textContent = '';
+    bot.queueRank = 0;
+  }
+  order.forEach((w, i) => {
+    const bot = bots.get(w.id);
+    const rank = i + 1;
+    bot.el.classList.add('queued');
+    bot.el.querySelector('.q').textContent = String(rank);
+    const spot = spotForRank(i);
+    const same = bot.queueRank === rank && bot.target && bot.target.x === spot.x && bot.target.z === spot.z;
+    bot.queueRank = rank;
+    if (same || bot.walking) { bot.target = spot; return; }
+    const prev = bot.target;
+    bot.target = spot;
+    if (prev && (prev.x !== spot.x || prev.z !== spot.z)) {
+      applyPose(bot, 'stand');
+      bot.path = route(bot.root.position, prev.door || spot.door, spot);
+      bot.walking = true;
+    }
+  });
+  const qEl = document.getElementById('queue');
+  if (!qEl) return;
+  if (!order.length) { qEl.style.display = 'none'; qEl.textContent = ''; return; }
+  qEl.style.display = 'block';
+  qEl.textContent = 'Waiting on you: ' + order.map((w, i) => `${i + 1} ${bots.get(w.id).b.short}`).join(', ');
+}
 function targetFor(id, state) {
   const sp = spots[id];
   const deptIdx = TEAM.findIndex((t) => t.id === id);
   switch (state) {
-    case 'working': return sp.desk;
+    case 'working': return id === LEAD_ID ? chiefBoard : sp.desk;
     case 'error': return sp.deskStand;
-    case 'waiting': return waitSpots[deptIdx % waitSpots.length];
+    case 'waiting': return spotForRank(Math.max(0, waitingOrder().findIndex((w) => w.id === id)));
     case 'handoff': return id === LEAD_ID ? sp.deskStand : handoffSpots[(deptIdx - 1 + 13) % 13];
     default: return id === LEAD_ID ? chiefIdle : seats[(deptIdx - 1) % seats.length];
   }
@@ -584,8 +916,10 @@ function route(from, fromDoor, to) {
 }
 function applyPose(bot, pose, seatY = 0) {
   const sit = pose === 'sit';
+  bot.body.rotation.x = 0;
   bot.legL.rotation.x = bot.legR.rotation.x = sit ? -Math.PI / 2 : 0;
   bot.armL.rotation.x = bot.armR.rotation.x = 0;
+  bot.armL.rotation.z = bot.armR.rotation.z = 0;
   bot.body.position.y = sit ? 0.06 + seatY : 0;
   bot.body.position.z = sit ? 0.0 : 0;
 }
@@ -601,11 +935,15 @@ function setState(id, state, line, instant = false) {
   bot.errMark.visible = state === 'error';
   if (!changed) return;
   const prev = bot.target; bot.state = state;
+  noteWaiting(id, state, statusById.get(id));
   const t = targetFor(id, state); bot.target = t;
-  if (instant || !prev) { place(bot, t); return; }
-  applyPose(bot, 'stand');
-  bot.path = route(bot.root.position, prev.door, t); bot.walking = true;
-  if (state === 'handoff') bot.armL.rotation.x = bot.armR.rotation.x = -1.1;
+  if (instant || !prev) place(bot, t);
+  else {
+    applyPose(bot, 'stand');
+    bot.path = route(bot.root.position, prev.door, t); bot.walking = true;
+    if (state === 'handoff') bot.armL.rotation.x = bot.armR.rotation.x = -1.1;
+  }
+  syncQueue();
 }
 const tmpV = new THREE.Vector3();
 function stepBots(dt) {
@@ -638,7 +976,10 @@ function effective(s, now) {
 function applyLive(data) {
   const now = new Date(data.now).getTime() || Date.now();
   const byId = new Map((data.statuses || []).map((s) => [s.bot_id, s]));
+  statusById.clear();
+  for (const s of data.statuses || []) statusById.set(s.bot_id, s);
   for (const t of TEAM) { const s = byId.get(t.id); if (s) setState(t.id, effective(s, now), s.line); else setState(t.id, 'idle', ''); }
+  syncQueue();
   drawUsage(data.usage);
 }
 async function poll() {
@@ -726,6 +1067,33 @@ let frames = 0, fpsT = 0, lowCount = 0, screenT = 0, dropLevel = 0;
 function loop() {
   const dt = Math.min(clock.getDelta(), 0.1), t = clock.elapsedTime;
   stepBots(dt);
+  stepDeon(dt);
+  let chiefWriting = false;
+  for (const bot of bots.values()) {
+    const writing = bot.b.id === LEAD_ID && bot.state === 'working' && !bot.walking;
+    const typing = bot.b.id !== LEAD_ID && bot.state === 'working' && !bot.walking;
+    if (writing) {
+      chiefWriting = true;
+      const s = Math.sin(t * 3.1);
+      bot.armR.rotation.x = -1.1 + s * 0.38;
+      bot.armR.rotation.z = -0.2 + Math.sin(t * 2.2) * 0.42;
+      bot.armL.rotation.x = -0.25;
+      bot.head.rotation.x = 0.12;
+    } else if (typing) {
+      const s = Math.sin(t * 9 + bot.i);
+      bot.armL.rotation.x = -0.84 + s * 0.2;
+      bot.armR.rotation.x = -0.84 - s * 0.2;
+      bot.head.rotation.x = Math.sin(t * 2.2 + bot.i) * 0.07;
+    } else if (!bot.walking) bot.head.rotation.set(0, 0, 0);
+  }
+  stepBoard(dt, chiefWriting);
+  syncGym(Date.now(), t);
+  for (const e of eyes) {
+    const u = (t + e.phase) % 5.2;
+    let y = e.open;
+    if (u > 4.92) { const k = (u - 4.92) / 0.28; y = e.open * (1 - 0.9 * Math.sin(Math.min(1, k) * Math.PI)); }
+    for (const m of e.pair) m.scale.y = Math.max(0.05, y);
+  }
   for (const l of leds) l.m.emissiveIntensity = (Math.sin(t * l.rate * 3 + l.phase) > 0.2) ? 0.9 : 0.15;
   screenT += dt; if (screenT > 0.08) { drawScreens(t); screenT = 0; }
   controls.update();
