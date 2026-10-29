@@ -410,33 +410,24 @@ spots[LEAD_ID] = {
   desk: { ...chiefWork, door: chiefDoor },
   deskStand: { x: 10.7, z: -1.55, ry: 0, pose: 'stand', door: chiefDoor },
 };
-const chiefIdle = { x: 12.35, z: 0.75, ry: 0, pose: 'sit', seatY: 0.05, door: chiefDoor };
-addChair(chiefIdle.x, chiefIdle.z, chiefIdle.ry, lambert('#e7d3b8'), 0.42);
-const chiefBoard = { x: 10.5, z: -2.85, ry: Math.PI, pose: 'stand', door: chiefDoor };
+const chiefBoard = { x: 10.5, z: -3.08, ry: Math.PI, pose: 'stand', door: chiefDoor };
 const boardCanvas = canvasTex(640, 360);
-const boardMat = new THREE.MeshLambertMaterial({ map: boardCanvas.t, color: '#f4f3ef' });
+const boardMat = new THREE.MeshBasicMaterial({ map: boardCanvas.t, color: '#ffffff', toneMapped: true });
 const boardMesh = new THREE.Mesh(new THREE.PlaneGeometry(1.9, 1.15), boardMat);
 boardMesh.position.set(10.5, 0.78, CHIEF.z0 + 0.08); boardMesh.castShadow = false; scene.add(boardMesh);
 bar(10.5, 0.78, CHIEF.z0 + 0.03, 2.1, 1.35, 0.05, frameMat);
-const boardInk = [];
+const boardInk = [
+  [72, 64, 190, 72, 320, 58, 460, 76, 580, 62],
+  [68, 118, 150, 126, 260, 112, 390, 128, 520, 116],
+  [80, 176, 210, 184, 340, 168, 490, 186, 575, 172],
+  [86, 236, 160, 248, 250, 230, 340, 252],
+  [400, 228, 480, 246, 560, 224, 600, 240],
+];
 let boardPen = null, boardTick = 0;
-function stepBoard(dt, active) {
-  if (!active) return;
-  boardTick += dt;
-  if (boardTick < 0.045) return;
-  boardTick = 0;
-  if (!boardPen) {
-    if (boardInk.length > 8) boardInk.length = 0;
-    boardPen = { x: 80 + Math.random() * 480, y: 36 + Math.random() * 270, n: 0, pts: [] };
-    boardInk.push(boardPen.pts);
-  }
-  boardPen.x = Math.max(28, Math.min(612, boardPen.x + (Math.random() - 0.42) * 26));
-  boardPen.y = Math.max(22, Math.min(338, boardPen.y + (Math.random() - 0.5) * 14));
-  boardPen.pts.push(boardPen.x, boardPen.y);
-  if (++boardPen.n > 16 + Math.random() * 22) boardPen = null;
+function paintBoard() {
   const c = boardCanvas.ctx;
   c.fillStyle = '#f7f6f2'; c.fillRect(0, 0, 640, 360);
-  c.strokeStyle = '#31425c'; c.lineWidth = 3.2; c.lineCap = 'round'; c.lineJoin = 'round';
+  c.strokeStyle = '#2c4f86'; c.lineWidth = 3.4; c.lineCap = 'round'; c.lineJoin = 'round';
   for (const pts of boardInk) {
     if (pts.length < 4) continue;
     c.beginPath(); c.moveTo(pts[0], pts[1]);
@@ -444,6 +435,23 @@ function stepBoard(dt, active) {
     c.stroke();
   }
   boardCanvas.t.needsUpdate = true;
+}
+paintBoard();
+function stepBoard(dt, active) {
+  if (!active) return;
+  boardTick += dt;
+  if (boardTick < 0.045) return;
+  boardTick = 0;
+  if (!boardPen) {
+    while (boardInk.length > 9) boardInk.shift();
+    boardPen = { x: 80 + Math.random() * 480, y: 36 + Math.random() * 270, n: 0, pts: [] };
+    boardInk.push(boardPen.pts);
+  }
+  boardPen.x = Math.max(28, Math.min(612, boardPen.x + (Math.random() - 0.42) * 26));
+  boardPen.y = Math.max(22, Math.min(338, boardPen.y + (Math.random() - 0.5) * 14));
+  boardPen.pts.push(boardPen.x, boardPen.y);
+  if (++boardPen.n > 16 + Math.random() * 22) boardPen = null;
+  paintBoard();
 }
 addWorkstation(10.7, -7.35, 0);
 hFloor(10.7, -6.7, 2.2, 2.0, runnerMat, 0.03);
@@ -492,10 +500,10 @@ const gymStations = [
   { kind: 'lift', x: -1.9, z: 8.15, ry: 0, pose: 'stand', door: { x: -1.9, z: 6.7 } },
   { kind: 'bike', x: -0.85, z: 8.15, ry: Math.PI, pose: 'sit', seatY: 0.1, door: { x: -0.85, z: 6.7 } },
   { kind: 'run', x: 0.25, z: 8.15, ry: 0, pose: 'stand', door: { x: 0.25, z: 6.7 } },
-  { kind: 'swim', x: 1.2, z: 8.45, ry: Math.PI / 2, pose: 'stand', door: { x: 1.2, z: 6.9 } },
+  { kind: 'swim', x: 2.15, z: 8.45, ry: Math.PI / 2, pose: 'stand', door: { x: 2.15, z: 6.9 } },
   { kind: 'stretch', x: -1.15, z: 7.42, ry: 0, pose: 'stand', door: { x: -1.15, z: 6.7 } },
 ];
-hFloor(-0.3, 8.2, 4.2, 2.2, lambert('#d5ddd8'), 0.012);
+hFloor(0.55, 8.2, 6.3, 2.2, lambert('#d5ddd8'), 0.012);
 {
   const g = new THREE.Group();
   const frame = lambert('#8d949b'), water = lambert('#7fa8b4'), belt = lambert('#4d555c');
@@ -508,9 +516,9 @@ hFloor(-0.3, 8.2, 4.2, 2.2, lambert('#d5ddd8'), 0.012);
   add(new RoundedBoxGeometry(0.22, 0.05, 0.16, 2, 0.02), chairMat, -0.85, 0.62, 8.2);
   add(new RoundedBoxGeometry(0.85, 0.12, 0.42, 2, 0.03), belt, 0.25, 0.16, 8.15);
   add(new THREE.BoxGeometry(0.08, 0.7, 0.42), frame, 0.62, 0.5, 8.15);
-  add(new RoundedBoxGeometry(1.15, 0.28, 0.62, 2, 0.06), lambert('#c5d0d4'), 1.2, 0.16, 8.45);
-  const pool = new THREE.Mesh(new THREE.PlaneGeometry(1.0, 0.48), water);
-  pool.rotation.x = -Math.PI / 2; pool.position.set(1.2, 0.31, 8.45); pool.castShadow = false; g.add(pool);
+  add(new RoundedBoxGeometry(2.4, 0.28, 0.7, 2, 0.06), lambert('#c5d0d4'), 2.15, 0.16, 8.45);
+  const pool = new THREE.Mesh(new THREE.PlaneGeometry(2.2, 0.52), water);
+  pool.rotation.x = -Math.PI / 2; pool.position.set(2.15, 0.31, 8.45); pool.castShadow = false; g.add(pool);
   add(new THREE.BoxGeometry(0.72, 0.025, 0.42), lambert('#c46b6b'), -1.15, 0.03, 7.42);
   scene.add(g);
 }
@@ -531,6 +539,7 @@ function beginWalk(bot, spot, direct) {
   const fromDoor = bot.target && bot.target.door;
   bot.flying = null;
   bot.root.position.y = 0;
+  if (bot.ripple) bot.ripple.visible = false;
   bot.target = spot;
   applyPose(bot, 'stand');
   bot.path = direct ? [{ x: spot.x, z: spot.z }] : route(bot.root.position, fromDoor, spot);
@@ -562,13 +571,37 @@ function trainAt(bot, kind, t) {
     bot.body.position.y = Math.abs(s) * 0.04;
   } else if (kind === 'swim') {
     applyPose(bot, 'stand');
-    bot.body.rotation.x = 1.15;
-    bot.body.position.y = -0.02;
-    bot.armL.rotation.x = s * 0.9;
-    bot.armR.rotation.x = -s * 0.9;
-    bot.legL.rotation.x = -s * 0.35;
-    bot.legR.rotation.x = s * 0.35;
+    const lane0 = 1.58, lane1 = 2.72;
+    const lap = (t * 0.15) % 2;
+    const going = lap < 1;
+    const along = going ? lap : 2 - lap;
+    const center = lane0 + (lane1 - lane0) * along;
+    const face = going ? 1 : -1;
+    const x = center - face * 0.52;
+    const z = st.z;
+    bot.root.position.set(x, 0.4, z);
+    bot.root.rotation.y = going ? Math.PI / 2 : -Math.PI / 2;
+    bot.body.rotation.x = Math.PI / 2;
+    bot.body.position.y = 0;
+    const stroke = t * 2.4;
+    bot.armL.scale.set(1, 2.6, 1); bot.armR.scale.set(1, 2.6, 1);
+    bot.legL.scale.set(1, 1.7, 1); bot.legR.scale.set(1, 1.7, 1);
+    for (const arm of [bot.armL, bot.armR]) arm.children.forEach((c, i) => { if (i > 0) c.visible = false; });
+    bot.armL.rotation.x = -Math.PI / 2 - stroke;
+    bot.armR.rotation.x = -Math.PI / 2 - stroke + Math.PI;
+    const kick = Math.sin(t * 14) * 0.55;
+    bot.legL.rotation.x = kick;
+    bot.legR.rotation.x = -kick;
+    if (!bot.ripple) {
+      bot.ripple = new THREE.Mesh(new THREE.RingGeometry(0.1, 0.26, 24), new THREE.MeshBasicMaterial({ color: '#f4fbff', transparent: true, opacity: 0.55, side: THREE.DoubleSide, depthWrite: false }));
+      bot.ripple.rotation.x = -Math.PI / 2;
+      scene.add(bot.ripple);
+    }
+    bot.ripple.visible = true;
+    bot.ripple.position.set(center, 0.33, z + 0.2);
+    bot.ripple.scale.setScalar(0.9 + 0.18 * Math.sin(t * 6));
   } else {
+    if (bot.ripple) bot.ripple.visible = false;
     applyPose(bot, 'stand');
     bot.armL.rotation.x = -2.35;
     bot.armR.rotation.x = -2.35;
@@ -945,7 +978,7 @@ function targetFor(id, state) {
     case 'error': return id === CODING_ID ? codingWork : sp.deskStand;
     case 'waiting': return spotForRank(Math.max(0, waitingOrder().findIndex((w) => w.id === id)));
     case 'handoff': return id === LEAD_ID ? sp.deskStand : handoffSpots[(deptIdx - 1 + 13) % 13];
-    default: return id === LEAD_ID ? chiefIdle : id === CODING_ID ? codingIdle : seats[(deptIdx - 1) % seats.length];
+    default: return id === LEAD_ID ? sp.desk : id === CODING_ID ? codingIdle : seats[(deptIdx - 1) % seats.length];
   }
 }
 function route(from, fromDoor, to) {
@@ -966,6 +999,9 @@ function applyPose(bot, pose, seatY = 0) {
   bot.legL.rotation.x = bot.legR.rotation.x = sit ? -Math.PI / 2 : 0;
   bot.armL.rotation.x = bot.armR.rotation.x = 0;
   bot.armL.rotation.z = bot.armR.rotation.z = 0;
+  bot.armL.scale.set(1, 1, 1); bot.armR.scale.set(1, 1, 1);
+  bot.legL.scale.set(1, 1, 1); bot.legR.scale.set(1, 1, 1);
+  for (const arm of [bot.armL, bot.armR]) arm.children.forEach((c) => { c.visible = true; });
   bot.body.position.y = sit ? 0.18 + seatY : 0;
   bot.body.position.z = sit ? 0.0 : 0;
 }
