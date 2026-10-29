@@ -14,4 +14,5 @@ export const TEAM = [
   { id: '68813f6b-9092-41fb-a5d1-d80fbcbb9066', name: 'Commercial Bot', short: 'Commercial', color: '#d68ba8', dept: 'Household Commerce', acc: 'bag' },
   { id: 'c5678fef-5ebd-40d8-9a1a-d6a35a84cf0b', name: 'Mogul', short: 'Mogul', color: '#c8a23a', dept: 'Side Ventures', acc: 'tophat' },
   { id: '0b8a07e0-8948-4ca1-a332-8fde70805e8d', name: 'Creative Bot', short: 'Creative', color: '#b8489a', dept: 'YouTube Studio', acc: 'camera' },
+  { id: 'coding-helper', name: 'Coding Helper', short: 'Coder', color: '#6c8cff', dept: 'Mainframe', acc: 'laptop' },
 ];

@@ -15,13 +15,15 @@ const POLL_MS = 20000;
 const SPINE_X = 2.7;
 // Deon's portrait swap. The eye screen stays until this file is wired onto his face.
 const DEON_AVATAR = '/avatars/deon.png';
+const CODING_ID = 'coding-helper';
 const FX = 13.6, FZ = 9.5;
 
-const DEON = { x0: 3.85, x1: 13.52, z0: -9.2, z1: -2.7 };
-const CHIEF = { x0: 3.85, x1: 13.52, z0: -2.7, z1: 3.15 };
-const WALL_H = 3.2;
-const deonDoor = { x: 3.05, z: -5.35 };
-const chiefDoor = { x: 3.05, z: 0.55 };
+// Each private office is half its previous floor area, still in the east corner.
+const DEON = { x0: 7.9, x1: 13.52, z0: -9.2, z1: -3.61 };
+const CHIEF = { x0: 7.9, x1: 13.52, z0: -3.61, z1: 1.42 };
+const WALL_H = 0.48;
+const deonDoor = { x: 7.1, z: -6.4 };
+const chiefDoor = { x: 7.1, z: 0.35 };
 const loungeDoor = { x: -6.2, z: 2.35 };
 const breakDoor = { x: 2.7, z: 5.05 };
 
@@ -48,7 +50,9 @@ scene.background = new THREE.Color('#c5d5e0');
 const camera = new THREE.PerspectiveCamera(40, innerWidth / innerHeight, 0.5, 300);
 function framing() {
   const portrait = innerHeight > innerWidth;
-  camera.position.set(portrait ? 0.2 : 0.15, portrait ? 28 : 17.5, portrait ? 22 : 16.8);
+  camera.fov = portrait ? 72 : 40;
+  camera.updateProjectionMatrix();
+  camera.position.set(portrait ? 0.2 : 0.15, portrait ? 42 : 17.5, portrait ? 12 : 16.8);
 }
 framing();
 const controls = new OrbitControls(camera, canvas);
@@ -369,16 +373,16 @@ spawnPlant(olivePlant(), 7.4, -10.8, 0.85, 0.4);
 // ---------- glass offices ----------
 wallAlongX(DEON.z0, DEON.x0, DEON.x1);
 wallAlongZ(DEON.x1, DEON.z0, DEON.z1);
-wallAlongZ(DEON.x0, DEON.z0, -5.9);
-wallAlongZ(DEON.x0, -4.75, DEON.z1);
+wallAlongZ(DEON.x0, DEON.z0, -6.85);
+wallAlongZ(DEON.x0, -5.95, DEON.z1);
 wallAlongX(DEON.z1, DEON.x0, DEON.x1);
 wallAlongZ(CHIEF.x1, CHIEF.z0, CHIEF.z1);
-wallAlongZ(CHIEF.x0, CHIEF.z0, 0.1);
-wallAlongZ(CHIEF.x0, 1.05, CHIEF.z1);
+wallAlongZ(CHIEF.x0, CHIEF.z0, -0.05);
+wallAlongZ(CHIEF.x0, 0.75, CHIEF.z1);
 wallAlongX(CHIEF.z1, CHIEF.x0, CHIEF.x1);
 for (const x of [DEON.x0, DEON.x1]) for (const z of [DEON.z0, DEON.z1]) post(x, z);
 for (const x of [CHIEF.x0, CHIEF.x1]) post(x, CHIEF.z1);
-post(CHIEF.x0, 0.1); post(CHIEF.x0, 1.05); post(DEON.x0, -5.9); post(DEON.x0, -4.75);
+post(CHIEF.x0, -0.05); post(CHIEF.x0, 0.75); post(DEON.x0, -6.85); post(DEON.x0, -5.95);
 railX((DEON.x0 + DEON.x1) / 2, WALL_H, DEON.z0, DEON.x1 - DEON.x0);
 railX((DEON.x0 + DEON.x1) / 2, WALL_H, DEON.z1, DEON.x1 - DEON.x0);
 railZ(DEON.x1, WALL_H, (DEON.z0 + DEON.z1) / 2, DEON.z1 - DEON.z0);
@@ -390,7 +394,7 @@ const seats = [];
 const spots = {};
 const COLS = [-10.4, -7.6, -4.8, -2.0, 0.8];
 const SIT_ROWS = [-6.2, -3.3, -0.4];
-const deptBots = TEAM.filter((b) => b.id !== LEAD_ID);
+const deptBots = TEAM.filter((b) => b.id !== LEAD_ID && b.id !== CODING_ID);
 deptBots.forEach((b, i) => {
   const row = Math.floor(i / 5);
   const col = row < 2 ? i % 5 : (i % 5) + 1;
@@ -401,19 +405,19 @@ deptBots.forEach((b, i) => {
   const rug = lambert(mix(b.color, '#d9d3cb', 0.86));
   hFloor(sx, sz - 0.25, 2.35, 2.05, rug, 0.015);
 });
-const chiefWork = addWorkstation(6.9, -1.25, 0);
+const chiefWork = addWorkstation(11.7, -1.55, 0);
 spots[LEAD_ID] = {
   desk: { ...chiefWork, door: chiefDoor },
-  deskStand: { x: 5.55, z: -1.25, ry: 0, pose: 'stand', door: chiefDoor },
+  deskStand: { x: 10.7, z: -1.55, ry: 0, pose: 'stand', door: chiefDoor },
 };
-const chiefIdle = { x: 5.05, z: 2.15, ry: 0, pose: 'sit', seatY: 0.05, door: chiefDoor };
+const chiefIdle = { x: 12.35, z: 0.75, ry: 0, pose: 'sit', seatY: 0.05, door: chiefDoor };
 addChair(chiefIdle.x, chiefIdle.z, chiefIdle.ry, lambert('#e7d3b8'), 0.42);
-const chiefBoard = { x: 8.7, z: -1.95, ry: Math.PI, pose: 'stand', door: chiefDoor };
+const chiefBoard = { x: 10.5, z: -2.85, ry: Math.PI, pose: 'stand', door: chiefDoor };
 const boardCanvas = canvasTex(640, 360);
 const boardMat = new THREE.MeshLambertMaterial({ map: boardCanvas.t, color: '#f4f3ef' });
-const boardMesh = new THREE.Mesh(new THREE.PlaneGeometry(2.55, 1.42), boardMat);
-boardMesh.position.set(8.7, 1.72, CHIEF.z0 + 0.1); boardMesh.castShadow = false; scene.add(boardMesh);
-bar(8.7, 1.72, CHIEF.z0 + 0.04, 2.75, 1.62, 0.05, frameMat);
+const boardMesh = new THREE.Mesh(new THREE.PlaneGeometry(1.9, 1.15), boardMat);
+boardMesh.position.set(10.5, 0.78, CHIEF.z0 + 0.08); boardMesh.castShadow = false; scene.add(boardMesh);
+bar(10.5, 0.78, CHIEF.z0 + 0.03, 2.1, 1.35, 0.05, frameMat);
 const boardInk = [];
 let boardPen = null, boardTick = 0;
 function stepBoard(dt, active) {
@@ -441,23 +445,23 @@ function stepBoard(dt, active) {
   }
   boardCanvas.t.needsUpdate = true;
 }
-addWorkstation(6.85, -7.45, 0);
-hFloor(6.9, -6.6, 2.6, 2.3, runnerMat, 0.03);
-hFloor(6.6, 0.2, 3.1, 2.4, runnerMat, 0.03);
+addWorkstation(10.7, -7.35, 0);
+hFloor(10.7, -6.7, 2.2, 2.0, runnerMat, 0.03);
+hFloor(11.4, -0.6, 2.4, 2.0, runnerMat, 0.03);
 
-const waitSpots = [-8.35, -7.8, -7.25, -6.7, -6.15, -4.4, -3.85, -3.3]
-  .map((z) => ({ x: 3.05, z, ry: Math.PI / 2, pose: 'stand', door: { x: 2.35, z } }))
-  .sort((a, b) => Math.abs(a.z + 5.35) - Math.abs(b.z + 5.35));
-bar(3.42, 0.52, -7.25, 0.36, 1.02, 2.45, deskMat);
-bar(3.42, 0.52, -3.85, 0.36, 1.02, 1.35, deskMat);
+const waitSpots = [-8.7, -8.2, -7.65, -7.1, -5.55, -5.05, -4.55, -4.05]
+  .map((z) => ({ x: 6.55, z, ry: Math.PI / 2, pose: 'stand', door: { x: 5.7, z } }))
+  .sort((a, b) => Math.abs(a.z + 6.4) - Math.abs(b.z + 6.4));
+bar(7.15, 0.42, -7.9, 0.32, 0.46, 1.85, deskMat);
+bar(7.15, 0.42, -4.8, 0.32, 0.46, 1.7, deskMat);
 for (const spot of waitSpots) {
-  put(new THREE.CylinderGeometry(0.12, 0.12, 0.06, 12), chairMat, spot.x, 0.46, spot.z);
-  put(new THREE.CylinderGeometry(0.03, 0.03, 0.42, 8), metal, spot.x, 0.21, spot.z);
+  put(new THREE.CylinderGeometry(0.11, 0.11, 0.05, 10), chairMat, spot.x, 0.28, spot.z);
+  put(new THREE.CylinderGeometry(0.025, 0.025, 0.24, 8), metal, spot.x, 0.12, spot.z);
 }
 const handoffSpots = [];
 for (let i = 0; i < 13; i++) {
-  const col = i % 5, row = Math.floor(i / 5);
-  handoffSpots.push({ x: 4.7 + col * 0.78, z: 0.25 + row * 0.62, ry: Math.PI, pose: 'stand', carry: true, door: chiefDoor });
+  const col = i % 4, row = Math.floor(i / 4);
+  handoffSpots.push({ x: 8.55 + col * 0.62, z: -1.15 + row * 0.48, ry: Math.PI, pose: 'stand', carry: true, door: chiefDoor });
 }
 
 // ---------- lounge, break room, lab ----------
@@ -485,10 +489,10 @@ bar(12.7, 0.48, 8.7, 1.5, 0.86, 0.5, deskMat);
 spawnPlant(olivePlant(), 10.2, 8.15, 0.9, 0.2);
 addPendant(br.x, br.z);
 const gymStations = [
-  { kind: 'lift', x: -1.9, z: 8.15, ry: 0 },
-  { kind: 'bike', x: -0.85, z: 8.15, ry: Math.PI },
-  { kind: 'run', x: 0.25, z: 8.15, ry: 0 },
-  { kind: 'swim', x: 1.2, z: 8.45, ry: Math.PI / 2 },
+  { kind: 'lift', x: -1.9, z: 8.15, ry: 0, pose: 'stand', door: { x: -1.9, z: 6.7 } },
+  { kind: 'bike', x: -0.85, z: 8.15, ry: Math.PI, pose: 'sit', seatY: 0.1, door: { x: -0.85, z: 6.7 } },
+  { kind: 'run', x: 0.25, z: 8.15, ry: 0, pose: 'stand', door: { x: 0.25, z: 6.7 } },
+  { kind: 'swim', x: 1.2, z: 8.45, ry: Math.PI / 2, pose: 'stand', door: { x: 1.2, z: 6.9 } },
 ];
 hFloor(-0.3, 8.2, 4.2, 2.2, lambert('#d5ddd8'), 0.012);
 {
@@ -509,43 +513,69 @@ hFloor(-0.3, 8.2, 4.2, 2.2, lambert('#d5ddd8'), 0.012);
   scene.add(g);
 }
 const GYM_MS = 3 * 60 * 1000;
-let gymId = null;
+let gymJob = null;
 function gymChoice(now) {
-  const idle = [...bots.values()].filter((b) => b.state === 'idle').map((b) => b.b.id).sort();
+  const idle = [...bots.values()].filter((b) => b.state === 'idle' && b.b.id !== CODING_ID).map((b) => b.b.id).sort();
   if (!idle.length) return null;
   const wheel = [];
   for (const id of idle) { wheel.push(id); if (id === NORSE_ID) wheel.push(id, id); }
   const slot = Math.floor(now / GYM_MS);
   return { id: wheel[slot % wheel.length], kind: ['lift', 'bike', 'run', 'swim'][slot % 4] };
 }
+function beginWalk(bot, spot) {
+  const fromDoor = bot.target && bot.target.door;
+  bot.flying = null;
+  bot.root.position.y = 0;
+  bot.target = spot;
+  applyPose(bot, 'stand');
+  bot.path = route(bot.root.position, fromDoor, spot);
+  bot.walking = true;
+}
 function syncGym(now, t) {
   const choice = gymChoice(now);
-  const next = choice && choice.id;
-  if (gymId && gymId !== next) {
-    const prev = bots.get(gymId);
-    if (prev && prev.state === 'idle' && !prev.walking && prev.target) { prev.body.rotation.x = 0; place(prev, prev.target); }
+  if (gymJob && gymJob.phase === 'back') {
+    const prev = bots.get(gymJob.id);
+    if (!prev || prev.state !== 'idle' || !prev.walking) gymJob = null;
+    else return;
   }
-  gymId = next;
-  if (!choice) return;
-  const bot = bots.get(choice.id);
-  if (!bot || bot.state !== 'idle' || bot.walking) return;
-  const st = gymStations.find((s) => s.kind === choice.kind);
+  if (gymJob && (!choice || choice.id !== gymJob.id)) {
+    const prev = bots.get(gymJob.id);
+    if (prev && prev.state === 'idle') {
+      beginWalk(prev, prev.home || prev.target);
+      gymJob = { id: prev.b.id, phase: 'back' };
+    } else gymJob = null;
+    return;
+  }
+  if (!gymJob && choice) {
+    const bot = bots.get(choice.id);
+    if (bot && bot.state === 'idle' && !bot.walking && !bot.flying) {
+      bot.home = bot.target;
+      beginWalk(bot, gymStations.find((s) => s.kind === choice.kind));
+      gymJob = { id: choice.id, kind: choice.kind, phase: 'go' };
+    }
+  }
+  if (!gymJob || gymJob.phase !== 'go' && gymJob.phase !== 'train') return;
+  const bot = bots.get(gymJob.id);
+  if (!bot || bot.state !== 'idle') { gymJob = null; return; }
+  if (bot.walking) return;
+  gymJob.phase = 'train';
+  const st = gymStations.find((s) => s.kind === gymJob.kind);
   bot.root.position.set(st.x, 0, st.z);
   bot.root.rotation.y = st.ry;
-  const s = Math.sin(t * (choice.kind === 'run' ? 10 : 6));
-  if (choice.kind === 'lift') {
+  const s = Math.sin(t * (gymJob.kind === 'run' ? 10 : 6));
+  if (gymJob.kind === 'lift') {
     applyPose(bot, 'stand');
     const up = (Math.sin(t * 2.2) + 1) / 2;
     bot.armL.rotation.x = -0.35 - up * 1.7;
     bot.armR.rotation.x = -0.35 - up * 1.7;
     bot.body.position.y = up * 0.05;
-  } else if (choice.kind === 'bike') {
+  } else if (gymJob.kind === 'bike') {
     applyPose(bot, 'sit', 0.1);
     bot.legL.rotation.x = -0.35 + s * 0.7;
     bot.legR.rotation.x = -0.35 - s * 0.7;
     bot.armL.rotation.x = -0.85;
     bot.armR.rotation.x = -0.85;
-  } else if (choice.kind === 'run') {
+  } else if (gymJob.kind === 'run') {
     applyPose(bot, 'stand');
     bot.legL.rotation.x = s * 0.85;
     bot.legR.rotation.x = -s * 0.85;
@@ -590,19 +620,25 @@ function addRack(x, z) {
   }
 }
 addRack(-13.15, -5.4); addRack(-13.15, -4.15);
+const codingDoor = { x: -11.5, z: -4.7 };
+const codingWork = { x: -12.35, z: -4.75, ry: -Math.PI / 2, pose: 'stand', door: codingDoor };
+const codingIdle = { x: -12.15, z: -3.25, ry: 0.5, pose: 'sit', seatY: 0.02, door: codingDoor };
+addChair(codingIdle.x, codingIdle.z, codingIdle.ry);
 
 spawnPlant(snakePlant(), -11.6, -8.15, 0.9, 0.3);
-spawnPlant(fiddlePlant(), 9.55, -8.35, 0.9, -0.5);
-spawnPlant(snakePlant(), 9.45, 2.25, 0.85, 0.4);
+spawnPlant(fiddlePlant(), 12.35, -8.15, 0.85, -0.4);
+spawnPlant(snakePlant(), 12.25, 0.55, 0.8, 0.2);
 addPendant(6.9, -6.5); addPendant(6.9, -0.4); addPendant(-6, -4.5); addPendant(-2, -4.5);
 
 // ---------- usage board (real stored reading only) ----------
 const usage = canvasTex(1024, 512);
 usage.t.anisotropy = MAX_ANISO;
 const usageMat = new THREE.MeshBasicMaterial({ map: usage.t, toneMapped: true, color: '#dedede' });
-const usageMesh = new THREE.Mesh(new THREE.PlaneGeometry(7.2, 2.35), usageMat);
-usageMesh.position.set(-4.6, 1.85, -FZ + 0.22); scene.add(usageMesh);
-bar(-4.6, 1.85, -FZ + 0.12, 7.5, 2.6, 0.06, frameMat);
+const usageMesh = new THREE.Mesh(new THREE.PlaneGeometry(3.3, 1.55), usageMat);
+usageMesh.position.set(-5.1, 1.05, -8.55); scene.add(usageMesh);
+bar(-5.1, 1.05, -8.64, 3.5, 1.75, 0.06, frameMat);
+bar(-6.55, 0.38, -8.64, 0.08, 0.76, 0.08, frameMat);
+bar(-3.65, 0.38, -8.64, 0.08, 0.76, 0.08, frameMat);
 const usageMain = document.getElementById('usage-main');
 const usageSub = document.getElementById('usage-sub');
 const usageMeter = document.getElementById('usage-meter');
@@ -652,10 +688,8 @@ const GEO = {
   torso: new THREE.SphereGeometry(0.22, 22, 16),
   head: new THREE.SphereGeometry(0.22, 28, 20),
   eye: new THREE.SphereGeometry(0.045, 16, 12),
-  cheek: new THREE.SphereGeometry(0.028, 10, 8),
 };
-const headMat = new THREE.MeshStandardMaterial({ color: '#f6f3ee', roughness: 0.42, metalness: 0 });
-const cheekMat = lambert('#f3b7b2');
+const eyeBlack = lambert('#111111');
 const eyes = [];
 function makeTag(shortName, fullName) {
   const el = document.createElement('div'); el.className = 'tag';
@@ -684,6 +718,7 @@ function accessory(kind) {
     case 'passport': add(new RoundedBoxGeometry(0.1, 0.13, 0.018, 2, 0.006), lambert('#2d3f66'), 0, 0, 0); return { g, on: 'hand' };
     case 'briefcase': add(new RoundedBoxGeometry(0.22, 0.16, 0.07, 2, 0.015), lambert('#5a4030'), 0, -0.08, 0); return { g, on: 'hand' };
     case 'bag': add(new RoundedBoxGeometry(0.16, 0.12, 0.12, 2, 0.012), lambert('#d2b48a'), 0, -0.05, 0); add(new THREE.BoxGeometry(0.162, 0.012, 0.122), lambert('#c4b49a'), 0, -0.01, 0); return { g, on: 'hand' };
+    case 'laptop': add(new RoundedBoxGeometry(0.16, 0.012, 0.11, 2, 0.004), lambert('#d9dde2'), 0, -0.02, 0, -0.7); add(new RoundedBoxGeometry(0.16, 0.1, 0.01, 2, 0.004), lambert('#2c3138'), 0, 0.04, -0.05, -0.7); return { g, on: 'hand' };
     case 'camera': add(new RoundedBoxGeometry(0.14, 0.09, 0.07, 2, 0.015), lambert('#33363b'), 0, 0, 0); add(new THREE.CylinderGeometry(0.03, 0.03, 0.05, 12), dark, 0, 0, 0.05, Math.PI / 2); return { g, on: 'chest' };
     default: return { g, on: 'hand' };
   }
@@ -699,18 +734,13 @@ function buildCharacter({ color, shortName, fullName, acc, blinkPhase = 0 }) {
   const rm = new THREE.Mesh(GEO.leg, limb); rm.position.y = -0.115; rm.castShadow = true;
   legL.add(lm); legR.add(rm); body.add(legL, legR);
   const torso = new THREE.Mesh(GEO.torso, shell); torso.position.y = 0.46; torso.castShadow = true; body.add(torso);
-  const head = new THREE.Mesh(GEO.head, headMat); head.position.y = 0.78; head.castShadow = true; body.add(head);
-  const eyeMat = new THREE.MeshLambertMaterial({ color: mix(color, '#4a525c', 0.42) });
+  const head = new THREE.Mesh(GEO.head, shell); head.position.y = 0.78; head.castShadow = true; body.add(head);
   const pair = [-0.045, 0.05].map((x, i) => {
-    const m = new THREE.Mesh(GEO.eye, eyeMat);
+    const m = new THREE.Mesh(GEO.eye, eyeBlack);
     m.scale.set(0.55, 1.25, 0.45); m.position.set(x, 0.07 + i * 0.012, 0.2); m.castShadow = false; m.receiveShadow = false; head.add(m); return m;
   });
   pair.forEach((m) => { m.rotation.z = -0.38; });
   eyes.push({ pair, phase: blinkPhase, open: 1.25 });
-  for (const sx of [-0.09, 0.1]) {
-    const cheek = new THREE.Mesh(GEO.cheek, cheekMat);
-    cheek.scale.set(1, 0.72, 0.4); cheek.position.set(sx, -0.02, 0.19); cheek.castShadow = false; cheek.receiveShadow = false; head.add(cheek);
-  }
   const armL = new THREE.Group(), armR = new THREE.Group();
   armL.position.set(-0.22, 0.52, 0); armR.position.set(0.22, 0.52, 0);
   const al = new THREE.Mesh(GEO.arm, limb); al.position.y = -0.09; al.castShadow = true;
@@ -727,9 +757,15 @@ function buildCharacter({ color, shortName, fullName, acc, blinkPhase = 0 }) {
   folder.position.set(0, 0.5, 0.22); folder.visible = false; folder.castShadow = true; body.add(folder);
   const errMark = new THREE.Mesh(new THREE.SphereGeometry(0.045, 10, 8), lambert('#c0504a'));
   errMark.position.set(0, 1.08, 0); errMark.visible = false; body.add(errMark);
+  const thrust = new THREE.Mesh(new THREE.SphereGeometry(0.045, 8, 6), new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.9, toneMapped: true }));
+  thrust.visible = false; scene.add(thrust);
+  const trail = [0.5, 0.3, 0.15].map((opacity) => {
+    const m = new THREE.Mesh(new THREE.SphereGeometry(0.03, 6, 6), new THREE.MeshBasicMaterial({ color, transparent: true, opacity, toneMapped: true }));
+    m.visible = false; scene.add(m); return m;
+  });
   const { el, tag } = makeTag(shortName, fullName); root.add(tag);
   body.traverse((o) => { if (o.isMesh) tagByMesh.set(o, el); });
-  return { root, body, legL, legR, armL, armR, head, folder, errMark, el };
+  return { root, body, legL, legR, armL, armR, head, folder, errMark, el, thrust, trail };
 }
 
 const bots = new Map();
@@ -739,10 +775,10 @@ TEAM.forEach((b, i) => {
 });
 const deon = buildCharacter({ color: '#8e9ea3', shortName: 'Deon', fullName: 'Deon', acc: null, blinkPhase: 1.4 });
 deon.portraitUrl = DEON_AVATAR;
-const deonRoom = { x0: DEON.x0 + 0.9, x1: DEON.x1 - 0.7, z0: DEON.z0 + 0.7, z1: -6.45 };
+const deonRoom = { x0: DEON.x0 + 0.55, x1: DEON.x1 - 0.45, z0: DEON.z0 + 0.5, z1: DEON.z1 - 0.35 };
 function deonGoal(kind) {
-  if (kind === 'sit') return { x: 6.85, z: -7.45, ry: 0, sit: true };
-  if (kind === 'window') return { x: 6.1 + Math.random() * 5.4, z: deonRoom.z0, ry: Math.PI, think: true };
+  if (kind === 'sit') return { x: 10.7, z: -7.35, ry: 0, sit: true };
+  if (kind === 'window') return { x: deonRoom.x0 + Math.random() * (deonRoom.x1 - deonRoom.x0), z: deonRoom.z0, ry: Math.PI, think: true };
   return {
     x: deonRoom.x0 + Math.random() * (deonRoom.x1 - deonRoom.x0),
     z: deonRoom.z0 + Math.random() * (deonRoom.z1 - deonRoom.z0),
@@ -886,11 +922,11 @@ function targetFor(id, state) {
   const sp = spots[id];
   const deptIdx = TEAM.findIndex((t) => t.id === id);
   switch (state) {
-    case 'working': return id === LEAD_ID ? chiefBoard : sp.desk;
-    case 'error': return sp.deskStand;
+    case 'working': return id === LEAD_ID ? chiefBoard : id === CODING_ID ? codingWork : sp.desk;
+    case 'error': return id === CODING_ID ? codingWork : sp.deskStand;
     case 'waiting': return spotForRank(Math.max(0, waitingOrder().findIndex((w) => w.id === id)));
     case 'handoff': return id === LEAD_ID ? sp.deskStand : handoffSpots[(deptIdx - 1 + 13) % 13];
-    default: return id === LEAD_ID ? chiefIdle : seats[(deptIdx - 1) % seats.length];
+    default: return id === LEAD_ID ? chiefIdle : id === CODING_ID ? codingIdle : seats[(deptIdx - 1) % seats.length];
   }
 }
 function route(from, fromDoor, to) {
@@ -928,16 +964,47 @@ function setState(id, state, line, instant = false) {
   noteWaiting(id, state, statusById.get(id));
   const t = targetFor(id, state); bot.target = t;
   if (instant || !prev) place(bot, t);
-  else {
+  else if (id !== LEAD_ID && id !== CODING_ID && ['working', 'error', 'handoff'].includes(state) && Math.hypot(bot.root.position.x - t.x, bot.root.position.z - t.z) > 4.2) {
+    bot.walking = false; bot.path = []; bot.root.position.y = 0;
+    bot.flying = { t: 0, dur: 1.25, x0: bot.root.position.x, z0: bot.root.position.z, x1: t.x, z1: t.z };
+    applyPose(bot, 'stand');
+  } else {
     applyPose(bot, 'stand');
     bot.path = route(bot.root.position, prev.door, t); bot.walking = true;
     if (state === 'handoff') bot.armL.rotation.x = bot.armR.rotation.x = -1.1;
   }
   syncQueue();
 }
+function stepFlight(bot, dt) {
+  const f = bot.flying;
+  f.t += dt;
+  const u = Math.min(1, f.t / f.dur);
+  const e = u * u * (3 - 2 * u);
+  const x = f.x0 + (f.x1 - f.x0) * e;
+  const z = f.z0 + (f.z1 - f.z0) * e;
+  const y = Math.sin(u * Math.PI) * 1.2;
+  bot.root.position.set(x, y, z);
+  bot.root.rotation.y = Math.atan2(f.x1 - f.x0, f.z1 - f.z0);
+  bot.legL.rotation.x = bot.legR.rotation.x = 0.35;
+  bot.armL.rotation.z = 0.5; bot.armR.rotation.z = -0.5;
+  if (bot.thrust) { bot.thrust.visible = true; bot.thrust.position.set(x, Math.max(0.06, y - 0.2), z); }
+  if (!f.hist) f.hist = [];
+  f.hist.unshift({ x, y: Math.max(0.05, y - 0.18), z });
+  f.hist.length = 3;
+  bot.trail && bot.trail.forEach((m, i) => { const h = f.hist[i]; m.visible = !!h; if (h) m.position.set(h.x, h.y, h.z); });
+  if (u >= 1) {
+    bot.flying = null; bot.root.position.y = 0;
+    if (bot.thrust) bot.thrust.visible = false;
+    if (bot.trail) bot.trail.forEach((m) => { m.visible = false; });
+    place(bot, bot.target);
+  }
+}
 const tmpV = new THREE.Vector3();
 function stepBots(dt) {
   for (const bot of bots.values()) {
+    if (bot.flying) { stepFlight(bot, dt); continue; }
+    if (bot.thrust) bot.thrust.visible = false;
+    if (bot.trail) bot.trail.forEach((m) => { m.visible = false; });
     if (!bot.walking) continue; // stationary bots are never animated (no bob)
     const p = bot.path[0];
     const pos = bot.root.position;
@@ -1060,8 +1127,8 @@ function loop() {
   stepDeon(dt);
   let chiefWriting = false;
   for (const bot of bots.values()) {
-    const writing = bot.b.id === LEAD_ID && bot.state === 'working' && !bot.walking;
-    const typing = bot.b.id !== LEAD_ID && bot.state === 'working' && !bot.walking;
+    const writing = bot.b.id === LEAD_ID && bot.state === 'working' && !bot.walking && !bot.flying;
+    const typing = bot.b.id !== LEAD_ID && bot.state === 'working' && !bot.walking && !bot.flying;
     if (writing) {
       chiefWriting = true;
       const s = Math.sin(t * 3.1);

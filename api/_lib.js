@@ -2,7 +2,7 @@ import crypto from 'node:crypto';
 export const SB_URL = process.env.SUPABASE_URL;
 const SB_KEY = process.env.SUPABASE_PUBLISHABLE_KEY;
 const DB_SECRET = process.env.BOT_OFFICE_DB_SECRET;
-export const BOTS = new Set(['8ab7d38a-8b50-4d19-abb0-aa40a5ae686b','494e6a0b-f66d-46b6-9c45-05b43f727e23','c7e14019-a299-4198-a4c6-d878a787c23e','4de86d3f-f8a8-4859-84a2-884b8031ef1c','9333ecc7-45be-4392-a622-6957398653db','5b53350b-0b86-44df-b07b-3fa591306f66','d6c82145-5a65-4faa-a9d3-441c60493abf','109831fb-78b0-4a9f-aca9-77c6e1409cc6','ae91fc3d-620b-4171-a606-2e2e85be812e','7b2cd5b6-987e-497f-997f-82a80e00e536','ddee92a4-84b0-4e8d-83af-faf742ce5fec','68813f6b-9092-41fb-a5d1-d80fbcbb9066','c5678fef-5ebd-40d8-9a1a-d6a35a84cf0b','0b8a07e0-8948-4ca1-a332-8fde70805e8d']);
+export const BOTS = new Set(['8ab7d38a-8b50-4d19-abb0-aa40a5ae686b','494e6a0b-f66d-46b6-9c45-05b43f727e23','c7e14019-a299-4198-a4c6-d878a787c23e','4de86d3f-f8a8-4859-84a2-884b8031ef1c','9333ecc7-45be-4392-a622-6957398653db','5b53350b-0b86-44df-b07b-3fa591306f66','d6c82145-5a65-4faa-a9d3-441c60493abf','109831fb-78b0-4a9f-aca9-77c6e1409cc6','ae91fc3d-620b-4171-a606-2e2e85be812e','7b2cd5b6-987e-497f-997f-82a80e00e536','ddee92a4-84b0-4e8d-83af-faf742ce5fec','68813f6b-9092-41fb-a5d1-d80fbcbb9066','c5678fef-5ebd-40d8-9a1a-d6a35a84cf0b','0b8a07e0-8948-4ca1-a332-8fde70805e8d','coding-helper']);
 export const STATES = new Set(['working','waiting','handoff','error','done','idle']);
 export const MAX_LINE = 60;
 export function safeEq(a, b) {
