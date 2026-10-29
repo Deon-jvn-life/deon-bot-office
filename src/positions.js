@@ -22,7 +22,7 @@ TEAM.filter((b) => b.id !== LEAD_ID && b.id !== CODING_ID).forEach((b, i) => {
   DESK[b.id] = { x, y, pose: 'sit', stand: { x, y: y + 3.4 } };
 });
 
-export const CODING_WORK = { x: 86.4, y: 75.2, pose: 'stand' };
+export const CODING_WORK = { x: 84.2, y: 81.8, pose: 'sit' };
 
 export const LOUNGE = [
   { x: 44.2, y: 26.2 }, { x: 48.2, y: 24.2 }, { x: 52.2, y: 23.4 }, { x: 56.4, y: 24.4 },

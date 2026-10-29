@@ -1,6 +1,6 @@
 import { TEAM, LEAD_ID } from './team.js';
 import { mountCast, actors, stepBoard, setRack } from './sprites.js';
-import { boot, isSim } from './state.js';
+import { boot, isSim, drawUsage } from './state.js';
 import { setState, stepAll, primeDeon, snapshot } from './move.js';
 import { CODING_ID } from './positions.js';
 
@@ -29,4 +29,5 @@ window.__office = {
   pixelRatio: () => window.devicePixelRatio || 1,
   simulating: () => isSim(),
   setState,
+  drawUsage,
 };

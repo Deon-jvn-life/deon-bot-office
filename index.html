@@ -31,7 +31,8 @@ html,body{margin:0;height:100%;overflow:hidden;background:#1c2128;font:13px syst
 .actor.walk.run .arm.l,.actor.walk.run .arm.r,.actor.walk.run .leg.l,.actor.walk.run .leg.r{animation-duration:.22s}
 .actor.type img,.actor.write img{animation:headBob .26s ease-in-out infinite alternate}
 .actor.sway img{animation:headBob 1.7s ease-in-out infinite alternate}
-.actor.sit .leg{height:10%;top:80%}
+.actor.sit .body{clip-path:inset(0 0 34% 0)}
+.actor.sit .leg{display:none}
 .actor.swim .limb{visibility:hidden}
 #rack-glow{position:absolute;left:89%;top:68.2%;width:7.4%;height:8%;pointer-events:none;z-index:1;border-radius:2px;background:linear-gradient(#102838,#1a6d90 45%,#102838);opacity:.22}
 #rack-glow.on{animation:flicker .11s steps(2,end) infinite}
@@ -42,7 +43,7 @@ html,body{margin:0;height:100%;overflow:hidden;background:#1c2128;font:13px syst
 @keyframes liftArm{from{transform:rotate(-6deg)}to{transform:rotate(-145deg)}}
 @keyframes headBob{from{transform:translateY(0)}to{transform:translateY(-6%)}}
 @keyframes flicker{0%{opacity:.2;box-shadow:none}50%{opacity:1;box-shadow:0 0 12px rgba(130,220,255,.9)}}
-.actor.sit{height:10%}
+.actor.sit{height:12%}
 .actor .tag{position:absolute;left:50%;bottom:100%;transform:translate(-50%,-2px);color:rgba(225,230,236,.9);background:rgba(28,32,38,.72);padding:1px 5px;border-radius:4px;font-size:10px;white-space:nowrap;display:none}
 .actor:hover .tag,.actor.open .tag{display:block}
 .actor .q{position:absolute;left:50%;top:-2px;transform:translate(-50%,-100%);min-width:1.1em;text-align:center;font-size:11px;font-weight:700;color:#1c2128;background:#e7edf2;border-radius:99px;padding:0 5px;display:none}

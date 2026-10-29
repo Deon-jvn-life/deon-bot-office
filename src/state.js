@@ -63,7 +63,14 @@ function usageCopy(u) {
   const left = Math.round(Math.max(0, Math.min(100, pct)));
   let sub = '';
   if (u.resets_at) { const d = new Date(u.resets_at); if (!isNaN(d.getTime())) sub = `Resets ${fmtET(d)}`; }
-  return { has: true, main: `${left}% left · ${100 - left}% used`, sub, left };
+  const used = 100 - left;
+  return { has: true, main: `${left}% left · ${used}% used`, sub, left, used };
+}
+
+function usedTone(used) {
+  if (used <= 50) return '#3fa86a';
+  if (used <= 80) return '#e0942f';
+  return '#d64545';
 }
 
 export function drawUsage(u) {
@@ -75,13 +82,18 @@ export function drawUsage(u) {
   const sign = document.getElementById('sign-line');
   if (main) main.textContent = copy.main;
   if (sub) sub.textContent = copy.sub || '';
-  if (sign) sign.textContent = copy.has ? `${copy.left}% left` : 'No reading yet';
+  const tone = copy.has ? usedTone(copy.used) : '';
+  if (main) main.style.color = tone;
+  if (sign) {
+    sign.textContent = copy.has ? `${copy.left}% left` : 'No reading yet';
+    sign.style.color = tone || '#f7f4ea';
+  }
   if (!meter || !fill) return;
   if (!copy.has) meter.style.display = 'none';
   else {
     meter.style.display = 'block';
     fill.style.width = `${copy.left}%`;
-    fill.style.background = copy.left < 15 ? '#c98a6a' : '#7eabc4';
+    fill.style.background = tone;
   }
 }
 

@@ -65,7 +65,8 @@ export function paint(a, extra = 0) {
   const drill = !moving && !swim ? a.drill : '';
   const writing = !moving && !swim && !drill && a.state === 'working' && a.b.id === LEAD_ID;
   const typing = !moving && !swim && !drill && a.state === 'working' && !writing;
-  a.el.classList.toggle('sit', a.pose === 'sit' || drill === 'bike');
+  const seated = a.pose === 'sit' && drill !== 'bike';
+  a.el.classList.toggle('sit', seated);
   a.el.classList.toggle('swim', swim);
   a.el.classList.toggle('walk', (moving && !swim) || drill === 'run');
   a.el.classList.toggle('run', drill === 'run');
@@ -82,9 +83,10 @@ export function paint(a, extra = 0) {
   a.el.style.zIndex = String(20 + Math.round(a.y));
   a.el.style.transform = swim ? 'translate(-50%, -58%)' : 'translate(-50%, -100%)';
   if (a.body) {
+    const drop = seated ? 'translateY(32%) ' : '';
     a.body.style.transform = swim
       ? `rotate(${a.swimRot}deg)`
-      : `scaleX(${a.facing || 1}) rotate(${lean}deg)`;
+      : `${drop}scaleX(${a.facing || 1}) rotate(${lean}deg)`;
   }
   const show = swim;
   a.wave.style.display = show ? 'block' : 'none';
