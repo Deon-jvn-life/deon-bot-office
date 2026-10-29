@@ -50,13 +50,13 @@ scene.background = new THREE.Color('#c5d5e0');
 const camera = new THREE.PerspectiveCamera(40, innerWidth / innerHeight, 0.5, 300);
 function framing() {
   const portrait = innerHeight > innerWidth;
-  camera.fov = portrait ? 72 : 40;
+  camera.fov = portrait ? 54 : 40;
   camera.updateProjectionMatrix();
-  camera.position.set(portrait ? 0.2 : 0.15, portrait ? 42 : 17.5, portrait ? 12 : 16.8);
+  camera.position.set(portrait ? 0.2 : 0.6, portrait ? 28 : 20.5, portrait ? 16 : 15.5);
 }
 framing();
 const controls = new OrbitControls(camera, canvas);
-controls.target.set(0.1, 0.35, -0.15);
+controls.target.set(0, 0.15, -0.4);
 controls.enableDamping = true;
 controls.maxPolarAngle = 1.25;
 controls.minDistance = 4; controls.maxDistance = 40;
@@ -72,17 +72,19 @@ composer.addPass(new OutputPass());
 let useComposer = true;
 
 // ---------- lights ----------
-scene.add(new THREE.HemisphereLight('#f3f1ec', '#8a8178', 1.35));
-const sun = new THREE.DirectionalLight('#fff6ea', 1.35);
-sun.position.set(16, 32, 18);
+scene.add(new THREE.HemisphereLight('#ffe6c8', '#6d645c', 0.7));
+const sun = new THREE.DirectionalLight('#fff1dc', 1.2);
+sun.position.set(10, 18, 12);
 sun.castShadow = true;
 sun.shadow.mapSize.set(2048, 2048);
 Object.assign(sun.shadow.camera, { left: -16, right: 16, top: 14, bottom: -14, near: 1, far: 70 });
-sun.shadow.bias = -0.0004; sun.shadow.normalBias = 0.04;
+sun.shadow.bias = -0.0004; sun.shadow.normalBias = 0.035; sun.shadow.radius = 3;
 scene.add(sun);
+const fill = new THREE.DirectionalLight('#d5e2ee', 0.32);
+fill.position.set(-12, 7, -4); scene.add(fill);
 
 // ---------- helpers ----------
-const lambert = (color, extra = {}) => new THREE.MeshLambertMaterial({ color, ...extra });
+const lambert = (color, extra = {}) => new THREE.MeshStandardMaterial({ color, roughness: 0.62, metalness: 0.02, ...extra });
 function canvasTex(w, h, draw) {
   const cv = document.createElement('canvas'); cv.width = w; cv.height = h;
   const ctx = cv.getContext('2d'); draw && draw(ctx, w, h);
@@ -92,7 +94,7 @@ function canvasTex(w, h, draw) {
 }
 function mix(a, b, k) { return '#' + new THREE.Color(a).lerp(new THREE.Color(b), k).getHexString(); }
 
-const floorMat = lambert('#ddd8d1');
+const floorMat = lambert('#8e8c88');
 const woodMat = lambert('#c6a36a');
 const oak = lambert('#e4d7c4');
 const deskMat = lambert('#e6d2ae');
@@ -109,7 +111,7 @@ const soilMat = lambert('#4a3d34');
 const trunkMat = lambert('#6b5344');
 const petiole = lambert('#3e6a46');
 const monBody = lambert('#2e343b');
-const screenMat = lambert('#46525e');
+const screenMat = lambert('#163044', { emissive: '#8ec8ea', emissiveIntensity: 0.7, roughness: 0.35 });
 const runnerMat = lambert('#d5dbdf');
 const sandMat = lambert('#e6d3b4');
 const waterMat = lambert('#8eafb8');
@@ -305,6 +307,8 @@ function addPendant(x, z) {
 function addDesk(x, z, ry) {
   const g = new THREE.Group(); g.position.set(x, 0, z); g.rotation.y = ry;
   addMesh(deskTopGeo, deskMat, 0, 0.74, 0, g);
+  addMesh(new RoundedBoxGeometry(0.78, 0.32, 0.62, 2, 0.02), deskMat, -0.4, 0.46, 0.02, g);
+  addMesh(new RoundedBoxGeometry(0.62, 0.1, 0.02, 1, 0.004), lambert('#c4a56a'), -0.4, 0.52, 0.32, g);
   for (const lx of [-0.84, 0.84]) for (const lz of [-0.34, 0.34]) addMesh(legGeo, metal, lx, 0.36, lz, g);
   addMesh(new THREE.CylinderGeometry(0.015, 0.015, 0.16, 6), metal, 0, 0.86, -0.22, g);
   addMesh(monGeo, monBody, 0, 1.12, -0.22, g);
@@ -312,7 +316,8 @@ function addDesk(x, z, ry) {
   scr.castShadow = false;
   absorb(g);
 }
-function addChair(x, z, ry, mat = chairMat, seatY = 0.48) {
+const officeChair = lambert('#3a4148');
+function addChair(x, z, ry, mat = officeChair, seatY = 0.48) {
   const g = new THREE.Group(); g.position.set(x, 0, z); g.rotation.y = ry;
   addMesh(seatGeo, mat, 0, seatY, 0, g);
   addMesh(backGeo, mat, 0, seatY + 0.32, -0.22, g, -0.2, 0, 0);
@@ -768,10 +773,10 @@ flush();
 
 // ---------- characters ----------
 const GEO = {
-  leg: new THREE.CapsuleGeometry(0.055, 0.12, 4, 8),
-  arm: new THREE.CapsuleGeometry(0.04, 0.1, 4, 8),
-  torso: new THREE.SphereGeometry(0.22, 22, 16),
-  head: new THREE.SphereGeometry(0.22, 28, 20),
+  leg: new THREE.CapsuleGeometry(0.07, 0.05, 3, 8),
+  arm: new THREE.CapsuleGeometry(0.05, 0.04, 3, 8),
+  torso: new THREE.SphereGeometry(0.17, 22, 16),
+  head: new THREE.SphereGeometry(0.32, 28, 20),
   eye: new THREE.CapsuleGeometry(0.034, 0.062, 3, 8),
 };
 const eyeBlack = lambert('#111111');
@@ -781,7 +786,7 @@ function makeTag(shortName, fullName) {
   el.innerHTML = '<span class="q"></span><span class="short"></span><span class="full"></span><span class="ln"></span>';
   el.querySelector('.short').textContent = shortName; el.querySelector('.full').textContent = fullName;
   el.addEventListener('click', () => el.classList.toggle('open'));
-  const tag = new CSS2DObject(el); tag.position.set(0, 1.18, 0);
+  const tag = new CSS2DObject(el); tag.position.set(0, 1.42, 0);
   return { el, tag };
 }
 function accessory(kind) {
@@ -889,21 +894,21 @@ function buildCharacter({ color, shortName, fullName, acc, hat, blinkPhase = 0 }
   const body = new THREE.Group(); root.add(body);
   const shell = lambert(color), limb = lambert(mix(color, '#ffffff', 0.12));
   const legL = new THREE.Group(), legR = new THREE.Group();
-  legL.position.set(-0.09, 0.28, 0); legR.position.set(0.09, 0.28, 0);
-  const lm = new THREE.Mesh(GEO.leg, limb); lm.position.y = -0.115; lm.castShadow = true;
-  const rm = new THREE.Mesh(GEO.leg, limb); rm.position.y = -0.115; rm.castShadow = true;
+  legL.position.set(-0.08, 0.22, 0); legR.position.set(0.08, 0.22, 0);
+  const lm = new THREE.Mesh(GEO.leg, limb); lm.position.y = -0.08; lm.castShadow = true;
+  const rm = new THREE.Mesh(GEO.leg, limb); rm.position.y = -0.08; rm.castShadow = true;
   legL.add(lm); legR.add(rm); body.add(legL, legR);
-  const torso = new THREE.Mesh(GEO.torso, shell); torso.position.y = 0.46; torso.castShadow = true; body.add(torso);
+  const torso = new THREE.Mesh(GEO.torso, shell); torso.position.y = 0.4; torso.castShadow = true; body.add(torso);
   const head = new THREE.Mesh(GEO.head, shell); head.position.y = 0.78; head.castShadow = true; body.add(head);
-  const pair = [[-0.058, 0.095], [0.048, 0.038]].map(([x, y]) => {
+  const pair = [[-0.07, 0.1], [0.055, 0.03]].map(([x, y]) => {
     const m = new THREE.Mesh(GEO.eye, eyeBlack);
-    m.scale.set(1, 1, 0.7); m.position.set(x, y, 0.185); m.rotation.z = -0.42; m.castShadow = false; m.receiveShadow = false; head.add(m); return m;
+    m.scale.set(1.15, 1.2, 0.72); m.position.set(x, y, 0.29); m.rotation.z = -0.38; m.castShadow = false; m.receiveShadow = false; head.add(m); return m;
   });
   eyes.push({ pair, phase: blinkPhase, open: 1 });
   let spin = null;
-  if (hat) { const h = hatFor(hat); head.add(h.g); spin = h.spin; }
+  if (hat) { const h = hatFor(hat); h.g.position.y = 0.12; head.add(h.g); spin = h.spin; }
   const armL = new THREE.Group(), armR = new THREE.Group();
-  armL.position.set(-0.22, 0.52, 0); armR.position.set(0.22, 0.52, 0);
+  armL.position.set(-0.2, 0.46, 0); armR.position.set(0.2, 0.46, 0);
   const al = new THREE.Mesh(GEO.arm, limb); al.position.y = -0.09; al.castShadow = true;
   const ar = new THREE.Mesh(GEO.arm, limb); ar.position.y = -0.09; ar.castShadow = true;
   armL.add(al); armR.add(ar); body.add(armL, armR);
@@ -926,9 +931,9 @@ function buildCharacter({ color, shortName, fullName, acc, hat, blinkPhase = 0 }
     mark.closePath();
     const logoMat = lambert('#f4f6f8', { side: THREE.DoubleSide });
     const chest = new THREE.Mesh(new THREE.ShapeGeometry(mark), logoMat);
-    chest.position.set(0, 0.5, 0.238); chest.castShadow = false;
+    chest.position.set(0, 0.44, 0.2); chest.castShadow = false;
     const back = chest.clone();
-    back.position.set(0, 0.5, -0.238); back.rotation.y = Math.PI; back.scale.x = -1;
+    back.position.set(0, 0.44, -0.2); back.rotation.y = Math.PI; back.scale.x = -1;
     body.add(chest, back);
   }
   const folder = new THREE.Mesh(new RoundedBoxGeometry(0.18, 0.026, 0.13, 2, 0.01), lambert('#c9a970'));
@@ -943,6 +948,7 @@ function buildCharacter({ color, shortName, fullName, acc, hat, blinkPhase = 0 }
   });
   const { el, tag } = makeTag(shortName, fullName); root.add(tag);
   body.traverse((o) => { if (o.isMesh) tagByMesh.set(o, el); });
+  root.scale.setScalar(1.6);
   return { root, body, legL, legR, armL, armR, head, folder, errMark, el, thrust, trail, spin };
 }
 
@@ -1117,7 +1123,7 @@ function targetFor(id, state) {
     case 'waiting': return spotOn(waitSpots, Math.max(0, queueRows('waiting').findIndex((w) => w.id === id)));
     case 'chief': return spotOn(chiefWaitSpots, Math.max(0, queueRows('chief').findIndex((w) => w.id === id)));
     case 'handoff': return id === LEAD_ID ? sp.deskStand : handoffSpots[(deptIdx - 1 + 13) % 13];
-    default: return id === LEAD_ID ? sp.desk : id === CODING_ID ? codingIdle : seats[(deptIdx - 1) % seats.length];
+    default: return id === LEAD_ID ? sp.desk : id === CODING_ID ? codingIdle : sp.desk;
   }
 }
 function route(from, fromDoor, to) {
@@ -1141,7 +1147,7 @@ function applyPose(bot, pose, seatY = 0) {
   bot.armL.scale.set(1, 1, 1); bot.armR.scale.set(1, 1, 1);
   bot.legL.scale.set(1, 1, 1); bot.legR.scale.set(1, 1, 1);
   for (const arm of [bot.armL, bot.armR]) arm.children.forEach((c) => { c.visible = true; });
-  bot.body.position.y = sit ? 0.18 + seatY : 0;
+  bot.body.position.y = sit ? 0.16 + seatY : 0;
   bot.body.position.z = sit ? 0.0 : 0;
 }
 function place(bot, t) {
@@ -1323,7 +1329,7 @@ function loop() {
   let chiefWriting = false;
   for (const bot of bots.values()) {
     const writing = bot.b.id === LEAD_ID && bot.state === 'working' && !bot.walking && !bot.flying;
-    const typing = bot.b.id !== LEAD_ID && bot.state === 'working' && !bot.walking && !bot.flying;
+    const typing = bot.b.id !== LEAD_ID && !bot.walking && !bot.flying && (bot.state === 'working' || (bot.state === 'idle' && bot.target && bot.target.pose === 'sit'));
     if (writing) {
       chiefWriting = true;
       const s = Math.sin(t * 3.1);
