@@ -5,12 +5,17 @@ html,body{margin:0;height:100%;overflow:hidden;background:#20252c;font:13px syst
 .tag{color:rgba(225,230,236,.72);background:rgba(28,32,38,.45);padding:1px 5px;border-radius:4px;font-size:10px;white-space:nowrap;pointer-events:auto;cursor:default;user-select:none}
 .tag .full{display:none}.tag:hover .short,.tag.open .short{display:none}.tag:hover .full,.tag.open .full{display:inline}
 .tag .ln{display:none;color:rgba(200,208,216,.65)}.tag:hover .ln,.tag.open .ln{display:block}
-#bar{position:fixed;left:50%;bottom:max(14px,env(safe-area-inset-bottom));transform:translateX(-50%);display:flex;gap:8px;align-items:center}
+#bar{position:fixed;z-index:4;left:50%;bottom:max(14px,env(safe-area-inset-bottom));transform:translateX(-50%);display:flex;gap:8px;align-items:center}
 #bar button{background:rgba(40,46,54,.85);color:#d5dbe1;border:1px solid #3c4550;border-radius:18px;padding:8px 16px;font:inherit;cursor:pointer}
-#sim{position:fixed;top:10px;left:50%;transform:translateX(-50%);color:#c7cdd3;background:rgba(40,46,54,.7);padding:3px 10px;border-radius:10px;font-size:11px;display:none}
-#warn{position:fixed;top:10px;right:10px;color:#f0c27a;background:rgba(60,46,26,.85);padding:5px 10px;border-radius:8px;font-size:12px;display:none;max-width:70vw}
-#legend{position:fixed;left:10px;top:10px;color:rgba(210,216,222,.7);font-size:11px;background:rgba(28,32,38,.5);padding:6px 9px;border-radius:8px}
+#sim{position:fixed;z-index:4;left:50%;bottom:62px;transform:translateX(-50%);color:#c7cdd3;background:rgba(40,46,54,.7);padding:3px 10px;border-radius:10px;font-size:11px;display:none}
+#warn{position:fixed;z-index:4;top:10px;right:10px;color:#f0c27a;background:rgba(60,46,26,.85);padding:5px 10px;border-radius:8px;font-size:12px;display:none;max-width:42vw}
+#usage{position:fixed;z-index:4;left:max(10px,env(safe-area-inset-left));top:max(10px,env(safe-area-inset-top));max-width:min(78vw,440px);background:rgba(27,32,38,.8);color:#e8eef3;padding:10px 12px 12px;border-radius:12px;pointer-events:none}
+#usage .kicker{font-size:10px;letter-spacing:.04em;text-transform:uppercase;color:rgba(210,216,222,.62)}
+#usage .num{font-size:clamp(20px,4.6vw,30px);font-weight:700;letter-spacing:-.03em;line-height:1.15;margin-top:2px}
+#usage .sub{font-size:clamp(12px,3vw,14px);color:rgba(220,228,234,.86);margin-top:3px}
+#usage .meter{height:8px;border-radius:99px;background:rgba(255,255,255,.14);margin-top:8px;overflow:hidden}
+#usage .meter>div{height:100%;width:0;background:#7eabc4}
 </style></head><body><canvas id="c"></canvas><div id="sim">Simulation</div><div id="warn"></div>
-<div id="legend">Bot Office</div>
+<div id="usage"><div class="kicker">Bot Office · Weekly usage</div><div class="num" id="usage-main">No reading yet</div><div class="sub" id="usage-sub"></div><div class="meter" id="usage-meter" style="display:none"><div id="usage-fill"></div></div></div>
 <div id="bar"><button id="simbtn">Simulate Work</button></div>
 <script type="module" src="/src/main.js"></script></body></html>
