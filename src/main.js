@@ -493,6 +493,7 @@ const gymStations = [
   { kind: 'bike', x: -0.85, z: 8.15, ry: Math.PI, pose: 'sit', seatY: 0.1, door: { x: -0.85, z: 6.7 } },
   { kind: 'run', x: 0.25, z: 8.15, ry: 0, pose: 'stand', door: { x: 0.25, z: 6.7 } },
   { kind: 'swim', x: 1.2, z: 8.45, ry: Math.PI / 2, pose: 'stand', door: { x: 1.2, z: 6.9 } },
+  { kind: 'stretch', x: -1.15, z: 7.42, ry: 0, pose: 'stand', door: { x: -1.15, z: 6.7 } },
 ];
 hFloor(-0.3, 8.2, 4.2, 2.2, lambert('#d5ddd8'), 0.012);
 {
@@ -510,79 +511,56 @@ hFloor(-0.3, 8.2, 4.2, 2.2, lambert('#d5ddd8'), 0.012);
   add(new RoundedBoxGeometry(1.15, 0.28, 0.62, 2, 0.06), lambert('#c5d0d4'), 1.2, 0.16, 8.45);
   const pool = new THREE.Mesh(new THREE.PlaneGeometry(1.0, 0.48), water);
   pool.rotation.x = -Math.PI / 2; pool.position.set(1.2, 0.31, 8.45); pool.castShadow = false; g.add(pool);
+  add(new THREE.BoxGeometry(0.72, 0.025, 0.42), lambert('#c46b6b'), -1.15, 0.03, 7.42);
   scene.add(g);
 }
-const GYM_MS = 3 * 60 * 1000;
+const GYM_ORDER = ['swim', 'bike', 'run', 'lift', 'stretch'];
+const CIRCUIT_MS = 75 * 1000;
+const STATION_MS = 15 * 1000;
 let gymJob = null;
-function gymChoice(now) {
+function gymSchedule(now) {
   const idle = [...bots.values()].filter((b) => b.state === 'idle' && b.b.id !== CODING_ID).map((b) => b.b.id).sort();
   if (!idle.length) return null;
   const wheel = [];
   for (const id of idle) { wheel.push(id); if (id === NORSE_ID) wheel.push(id, id); }
-  const slot = Math.floor(now / GYM_MS);
-  return { id: wheel[slot % wheel.length], kind: ['lift', 'bike', 'run', 'swim'][slot % 4] };
+  const circuit = Math.floor(now / CIRCUIT_MS);
+  const phase = Math.min(GYM_ORDER.length - 1, Math.floor((now % CIRCUIT_MS) / STATION_MS));
+  return { id: wheel[circuit % wheel.length], kind: GYM_ORDER[phase], circuit };
 }
-function beginWalk(bot, spot) {
+function beginWalk(bot, spot, direct) {
   const fromDoor = bot.target && bot.target.door;
   bot.flying = null;
   bot.root.position.y = 0;
   bot.target = spot;
   applyPose(bot, 'stand');
-  bot.path = route(bot.root.position, fromDoor, spot);
+  bot.path = direct ? [{ x: spot.x, z: spot.z }] : route(bot.root.position, fromDoor, spot);
   bot.walking = true;
 }
-function syncGym(now, t) {
-  const choice = gymChoice(now);
-  if (gymJob && gymJob.phase === 'back') {
-    const prev = bots.get(gymJob.id);
-    if (!prev || prev.state !== 'idle' || !prev.walking) gymJob = null;
-    else return;
-  }
-  if (gymJob && (!choice || choice.id !== gymJob.id)) {
-    const prev = bots.get(gymJob.id);
-    if (prev && prev.state === 'idle') {
-      beginWalk(prev, prev.home || prev.target);
-      gymJob = { id: prev.b.id, phase: 'back' };
-    } else gymJob = null;
-    return;
-  }
-  if (!gymJob && choice) {
-    const bot = bots.get(choice.id);
-    if (bot && bot.state === 'idle' && !bot.walking && !bot.flying) {
-      bot.home = bot.target;
-      beginWalk(bot, gymStations.find((s) => s.kind === choice.kind));
-      gymJob = { id: choice.id, kind: choice.kind, phase: 'go' };
-    }
-  }
-  if (!gymJob || gymJob.phase !== 'go' && gymJob.phase !== 'train') return;
-  const bot = bots.get(gymJob.id);
-  if (!bot || bot.state !== 'idle') { gymJob = null; return; }
-  if (bot.walking) return;
-  gymJob.phase = 'train';
-  const st = gymStations.find((s) => s.kind === gymJob.kind);
+function trainAt(bot, kind, t) {
+  const st = gymStations.find((s) => s.kind === kind);
   bot.root.position.set(st.x, 0, st.z);
   bot.root.rotation.y = st.ry;
-  const s = Math.sin(t * (gymJob.kind === 'run' ? 10 : 6));
-  if (gymJob.kind === 'lift') {
+  const s = Math.sin(t * (kind === 'run' ? 10 : 6));
+  if (kind === 'lift') {
     applyPose(bot, 'stand');
     const up = (Math.sin(t * 2.2) + 1) / 2;
     bot.armL.rotation.x = -0.35 - up * 1.7;
     bot.armR.rotation.x = -0.35 - up * 1.7;
     bot.body.position.y = up * 0.05;
-  } else if (gymJob.kind === 'bike') {
+  } else if (kind === 'bike') {
     applyPose(bot, 'sit', 0.1);
     bot.legL.rotation.x = -0.35 + s * 0.7;
     bot.legR.rotation.x = -0.35 - s * 0.7;
     bot.armL.rotation.x = -0.85;
     bot.armR.rotation.x = -0.85;
-  } else if (gymJob.kind === 'run') {
+  } else if (kind === 'run') {
     applyPose(bot, 'stand');
     bot.legL.rotation.x = s * 0.85;
     bot.legR.rotation.x = -s * 0.85;
     bot.armL.rotation.x = -s * 0.55;
     bot.armR.rotation.x = s * 0.55;
     bot.body.position.y = Math.abs(s) * 0.04;
-  } else {
+  } else if (kind === 'swim') {
     applyPose(bot, 'stand');
     bot.body.rotation.x = 1.15;
     bot.body.position.y = -0.02;
@@ -590,7 +568,48 @@ function syncGym(now, t) {
     bot.armR.rotation.x = -s * 0.9;
     bot.legL.rotation.x = -s * 0.35;
     bot.legR.rotation.x = s * 0.35;
+  } else {
+    applyPose(bot, 'stand');
+    bot.armL.rotation.x = -2.35;
+    bot.armR.rotation.x = -2.35;
+    bot.body.rotation.z = Math.sin(t * 1.25) * 0.38;
   }
+}
+function syncGym(now, t) {
+  const plan = gymSchedule(now);
+  if (gymJob && gymJob.phase === 'back') {
+    const prev = bots.get(gymJob.id);
+    if (!prev || prev.state !== 'idle' || !prev.walking) gymJob = null;
+    else return;
+  }
+  if (gymJob && (!plan || plan.id !== gymJob.id || plan.circuit !== gymJob.circuit)) {
+    const prev = bots.get(gymJob.id);
+    const same = plan && prev && plan.id === gymJob.id;
+    if (prev && prev.state === 'idle' && !prev.flying) {
+      beginWalk(prev, prev.home || prev.target, false);
+      prev.home = null;
+    }
+    gymJob = same ? { id: plan.id, phase: 'back', circuit: plan.circuit } : null;
+    if (same) return;
+  }
+  if (!plan) return;
+  const bot = bots.get(plan.id);
+  if (!bot || bot.state !== 'idle' || bot.flying) return;
+  const st = gymStations.find((s) => s.kind === plan.kind);
+  if (!gymJob) {
+    if (bot.walking) return;
+    bot.home = bot.target;
+    beginWalk(bot, st, false);
+    gymJob = { id: plan.id, kind: plan.kind, circuit: plan.circuit };
+    return;
+  }
+  if (plan.kind !== gymJob.kind) {
+    beginWalk(bot, st, true);
+    gymJob.kind = plan.kind;
+    return;
+  }
+  if (bot.walking) return;
+  trainAt(bot, plan.kind, t);
 }
 
 const screens = [];
@@ -943,6 +962,7 @@ function route(from, fromDoor, to) {
 function applyPose(bot, pose, seatY = 0) {
   const sit = pose === 'sit';
   bot.body.rotation.x = 0;
+  bot.body.rotation.z = 0;
   bot.legL.rotation.x = bot.legR.rotation.x = sit ? -Math.PI / 2 : 0;
   bot.armL.rotation.x = bot.armR.rotation.x = 0;
   bot.armL.rotation.z = bot.armR.rotation.z = 0;
