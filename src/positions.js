@@ -55,6 +55,23 @@ export const GYM_ORDER = ['swim', 'bike', 'run', 'lift', 'stretch'];
 export const STATION_MS = 15000;
 export const CIRCUIT_MS = 75000;
 
+export const HANGOUT = [
+  { kind: 'lounge', x: 45.6, y: 26.4, pose: 'sit' },
+  { kind: 'lounge', x: 51.4, y: 24.2, pose: 'sit' },
+  { kind: 'lounge', x: 57.2, y: 26.2, pose: 'sit' },
+  { kind: 'lounge', x: 49.2, y: 29.2, pose: 'sit' },
+  { kind: 'window', x: 47.5, y: 20.2, pose: 'stand' },
+  { kind: 'window', x: 54.8, y: 19.6, pose: 'stand' },
+  { kind: 'window', x: 61.4, y: 20.4, pose: 'stand' },
+  { kind: 'plant', x: 38.6, y: 23.6, pose: 'stand' },
+  { kind: 'plant', x: 66.8, y: 23.8, pose: 'stand' },
+  { kind: 'plant', x: 6.4, y: 46.8, pose: 'stand' },
+  { kind: 'plant', x: 95.0, y: 56.2, pose: 'stand' },
+  { kind: 'kitchen', x: 43.8, y: 33.2, pose: 'stand' },
+  { kind: 'kitchen', x: 51.6, y: 32.4, pose: 'stand' },
+  { kind: 'kitchen', x: 59.4, y: 33.0, pose: 'stand' },
+];
+
 export function loungeFor(id) {
   const i = TEAM.findIndex((t) => t.id === id);
   return LOUNGE[(i < 0 ? 0 : i) % LOUNGE.length];

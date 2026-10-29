@@ -1,5 +1,6 @@
 import { TEAM } from './team.js';
-import { BOARD_BOX } from './positions.js';
+import { BOARD_BOX, LEAD_ID } from './positions.js';
+import { propSvg } from './props.js';
 
 export const actors = new Map();
 export let deon = null;
@@ -17,7 +18,8 @@ function ripple() {
 function makeActor(root, b) {
   const el = document.createElement('div');
   el.className = 'actor';
-  el.innerHTML = `<img alt="" src="/sprites/${b.id}.png"><span class="tag"></span><span class="q"></span>`;
+  el.style.setProperty('--bot', b.color || '#243040');
+  el.innerHTML = `<div class="body"><img alt="" src="/sprites/${b.id}.png"><i class="limb arm l"></i><i class="limb arm r">${propSvg(b)}</i><i class="limb leg l"></i><i class="limb leg r"></i></div><span class="tag"></span><span class="q"></span>`;
   const tag = el.querySelector('.tag');
   tag.textContent = b.short;
   tag.title = b.name;
@@ -26,10 +28,10 @@ function makeActor(root, b) {
   root.appendChild(wave);
   root.appendChild(el);
   return {
-    b, el, img: el.querySelector('img'), tag, badge: el.querySelector('.q'), wave,
+    b, el, body: el.querySelector('.body'), img: el.querySelector('img'), tag, badge: el.querySelector('.q'), wave,
     x: 50, y: 40, path: [], walking: false, flying: null, state: 'idle', line: '',
     target: null, pose: 'stand', phase: 0, home: null, queueRank: 0, queueKind: '',
-    facing: 1, lean: 0, swimRot: -76,
+    facing: 1, lean: 0, swimRot: -76, i: 0,
   };
 }
 
@@ -44,22 +46,46 @@ export function mountCast() {
     pointerEvents: 'none', zIndex: '1',
   });
   board.innerHTML = '<svg id="board-svg" viewBox="0 0 100 60" width="100%" height="100%"></svg>';
+  const glow = document.createElement('div');
+  glow.id = 'rack-glow';
   root.appendChild(board);
-  for (const b of TEAM) actors.set(b.id, makeActor(root, b));
-  deon = makeActor(root, { id: 'deon', name: 'Deon', short: 'Deon' });
+  root.appendChild(glow);
+  TEAM.forEach((b, i) => {
+    const a = makeActor(root, b);
+    a.i = i;
+    actors.set(b.id, a);
+  });
+  deon = makeActor(root, { id: 'deon', name: 'Deon', short: 'Deon', color: '#243040' });
+  deon.i = 3;
 }
 
 export function paint(a, extra = 0) {
   const swim = a.pose === 'swim';
-  a.el.classList.toggle('sit', a.pose === 'sit');
-  const bob = a.walking ? Math.sin(a.phase) * 0.55 : 0;
+  const moving = !!(a.walking || a.flying);
+  const drill = !moving && !swim ? a.drill : '';
+  const writing = !moving && !swim && !drill && a.state === 'working' && a.b.id === LEAD_ID;
+  const typing = !moving && !swim && !drill && a.state === 'working' && !writing;
+  a.el.classList.toggle('sit', a.pose === 'sit' || drill === 'bike');
+  a.el.classList.toggle('swim', swim);
+  a.el.classList.toggle('walk', (moving && !swim) || drill === 'run');
+  a.el.classList.toggle('run', drill === 'run');
+  a.el.classList.toggle('bike', drill === 'bike');
+  a.el.classList.toggle('lift', drill === 'lift');
+  a.el.classList.toggle('type', typing);
+  a.el.classList.toggle('write', writing);
+  a.el.classList.toggle('sway', !moving && !typing && !writing && !swim && !drill);
+  const bob = moving ? Math.sin(a.phase) * 0.55 : 0;
+  let lean = a.lean || 0;
+  if (!swim && !moving && !typing && !writing && !drill) lean += Math.sin(a.phase + a.i) * 3.2;
   a.el.style.left = a.x + '%';
   a.el.style.top = (a.y + bob + extra) + '%';
   a.el.style.zIndex = String(20 + Math.round(a.y));
   a.el.style.transform = swim ? 'translate(-50%, -58%)' : 'translate(-50%, -100%)';
-  a.img.style.transform = swim
-    ? `rotate(${a.swimRot}deg)`
-    : `scaleX(${a.facing || 1}) rotate(${a.lean || 0}deg)`;
+  if (a.body) {
+    a.body.style.transform = swim
+      ? `rotate(${a.swimRot}deg)`
+      : `scaleX(${a.facing || 1}) rotate(${lean}deg)`;
+  }
   const show = swim;
   a.wave.style.display = show ? 'block' : 'none';
   if (show) {
@@ -72,6 +98,11 @@ export function paint(a, extra = 0) {
 
 let pen = null, acc = 0;
 const strokes = [];
+export function setRack(on) {
+  const glow = document.getElementById('rack-glow');
+  if (glow) glow.classList.toggle('on', !!on);
+}
+
 export function stepBoard(dt, active) {
   const board = document.getElementById('board');
   const svg = document.getElementById('board-svg');
