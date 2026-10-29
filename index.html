@@ -1,12 +1,18 @@
 <!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="robots" content="noindex"><title>Bot Office</title>
 <style>
-html,body{margin:0;height:100%;overflow:hidden;background:#20252c;font:13px system-ui,-apple-system,Segoe UI,sans-serif}
-#c{position:fixed;inset:0}
-.tag{color:rgba(225,230,236,.72);background:rgba(28,32,38,.45);padding:1px 5px;border-radius:4px;font-size:10px;white-space:nowrap;pointer-events:auto;cursor:default;user-select:none}
-.tag .full{display:none}.tag:hover .short,.tag.open .short{display:none}.tag:hover .full,.tag.open .full{display:inline}
-.tag .ln{display:none;color:rgba(200,208,216,.65)}.tag:hover .ln,.tag.open .ln{display:block}
-.tag .q{display:none}
-.tag.queued .q{display:inline-block;margin-right:3px;min-width:1.1em;text-align:center;font-size:10px;font-weight:700;color:#1c2128;background:#e7edf2;border-radius:99px;padding:0 4px}
+html,body{margin:0;height:100%;overflow:hidden;background:#1c2128;font:13px system-ui,-apple-system,Segoe UI,sans-serif}
+#plate{position:absolute;inset:0;margin:auto;aspect-ratio:1280/720;width:min(100vw,calc(100vh * 1280 / 720));height:min(100vh,calc(100vw * 720 / 1280))}
+#bg{width:100%;height:100%;display:block;user-select:none;pointer-events:none}
+#people{position:absolute;inset:0}
+.actor{position:absolute;height:12%;width:auto;transform:translate(-50%,-100%);transform-origin:50% 100%;pointer-events:auto;cursor:default;filter:drop-shadow(0 3px 2px rgba(0,0,0,.35));z-index:2}
+.actor img{height:100%;width:auto;display:block}
+.actor.sit{height:10%}
+.actor .tag{position:absolute;left:50%;bottom:100%;transform:translate(-50%,-2px);color:rgba(225,230,236,.9);background:rgba(28,32,38,.72);padding:1px 5px;border-radius:4px;font-size:10px;white-space:nowrap;display:none}
+.actor:hover .tag,.actor.open .tag{display:block}
+.actor .q{position:absolute;left:50%;top:-2px;transform:translate(-50%,-100%);min-width:1.1em;text-align:center;font-size:11px;font-weight:700;color:#1c2128;background:#e7edf2;border-radius:99px;padding:0 5px;display:none}
+.actor.queued .q{display:inline-block}
+#sign{position:absolute;left:65.2%;top:67.2%;width:8.6%;color:#f7f4ea;text-align:center;font-weight:700;font-size:clamp(8px,1.05vw,13px);line-height:1.15;text-shadow:0 1px 2px rgba(0,0,0,.8);background:#2a3034;border-radius:4px;padding:3px 2px 4px;pointer-events:none}
+#sign small{display:block;font-weight:600;font-size:.72em;opacity:.9}
 #bar{position:fixed;z-index:4;left:50%;bottom:max(14px,env(safe-area-inset-bottom));transform:translateX(-50%);display:flex;gap:8px;align-items:center}
 #bar button{background:rgba(40,46,54,.85);color:#d5dbe1;border:1px solid #3c4550;border-radius:18px;padding:8px 16px;font:inherit;cursor:pointer}
 #sim{position:fixed;z-index:4;left:50%;bottom:62px;transform:translateX(-50%);color:#c7cdd3;background:rgba(40,46,54,.7);padding:3px 10px;border-radius:10px;font-size:11px;display:none}
@@ -17,7 +23,13 @@ html,body{margin:0;height:100%;overflow:hidden;background:#20252c;font:13px syst
 #usage .sub{font-size:clamp(12px,3vw,14px);color:rgba(220,228,234,.86);margin-top:3px}
 #usage .meter{height:8px;border-radius:99px;background:rgba(255,255,255,.14);margin-top:8px;overflow:hidden}
 #usage .meter>div{height:100%;width:0;background:#7eabc4}
-</style></head><body><canvas id="c"></canvas><div id="sim">Simulation</div><div id="warn"></div>
+</style></head><body>
+<div id="plate">
+  <img id="bg" alt="" src="/office-bg.jpg">
+  <div id="sign">Usage Board<small id="sign-line">No reading yet</small></div>
+  <div id="people"></div>
+</div>
+<div id="sim">Simulation</div><div id="warn"></div>
 <div id="usage"><div class="kicker">Bot Office · Weekly usage</div><div class="num" id="usage-main">No reading yet</div><div class="sub" id="usage-sub"></div><div class="meter" id="usage-meter" style="display:none"><div id="usage-fill"></div></div><div id="queue" style="display:none;margin-top:8px;font-size:12px;line-height:1.35;color:#e7eef3"></div></div>
 <div id="bar"><button id="simbtn">Simulate Work</button></div>
 <script type="module" src="/src/main.js"></script></body></html>
