@@ -2,7 +2,7 @@ import { actors, deon, paint } from './sprites.js';
 import { getStatus, noteQueue, orderOf } from './state.js';
 import {
   LEAD_ID, CODING_ID, NORSE_ID, DESK, CHIEF_DESK, CHIEF_BOARD, CODING_WORK,
-  loungeFor, HANGOUT, WAIT, CHIEF_WAIT, HANDOFF, GYM, GYM_ORDER, STATION_MS, CIRCUIT_MS,
+  loungeFor, WAIT, CHIEF_WAIT, HANDOFF, GYM, GYM_ORDER, STATION_MS, CIRCUIT_MS,
   DEON_ROOM, DEON_SIT,
 } from './positions.js';
 
@@ -25,12 +25,6 @@ function place(a, spot) {
   a.walking = false;
   a.path = [];
   a.flying = null;
-  a.lean = 0;
-  a.drill = '';
-  if (a.state === 'idle' && !(gymJob && gymJob.id === a.b.id)) {
-    if (!a.roam) a.roam = { until: ((a.i || 0) % 4) * 0.35, step: a.i || 0 };
-    else a.roam.until = (a.pose === 'sit' ? 4.4 : 2.2) + ((a.i || 0) % 3) * 0.5;
-  }
   paint(a);
 }
 
@@ -41,8 +35,6 @@ function go(a, spot, prev, instant) {
   const dist = Math.hypot(a.x - next.x, a.y - next.y);
   const fly = a.b.id !== LEAD_ID && a.b.id !== CODING_ID && dist > 22 && ['working', 'error', 'handoff'].includes(a.state);
   a.pose = 'stand';
-  a.lean = 0;
-  a.drill = '';
   if (fly) {
     a.walking = false;
     a.path = [];
@@ -68,12 +60,12 @@ function targetFor(id, state) {
     if (state === 'working') return CHIEF_BOARD;
     if (state === 'error') return { x: CHIEF_DESK.x, y: CHIEF_DESK.y + 2.4, pose: 'stand' };
     if (state === 'handoff') return { x: 26.2, y: 33.4, pose: 'stand' };
-    return idleSpot(id);
+    return { ...loungeFor(id), pose: 'stand' };
   }
   if (id === CODING_ID) {
     if (state === 'working' || state === 'error') return CODING_WORK;
     if (state === 'handoff') return HANDOFF[0];
-    return idleSpot(id);
+    return { ...loungeFor(id), pose: 'stand' };
   }
   const desk = DESK[id];
   if (state === 'working') return { x: desk.x, y: desk.y, pose: 'sit' };
@@ -83,13 +75,7 @@ function targetFor(id, state) {
     for (const c of id) h = (h * 33 + c.charCodeAt(0)) >>> 0;
     return HANDOFF[h % HANDOFF.length];
   }
-  return idleSpot(id);
-}
-
-function idleSpot(id) {
-  const seats = HANGOUT.filter((s) => s.kind === 'lounge');
-  const i = actors.get(id)?.i || 0;
-  return seats[i % seats.length];
+  return { ...loungeFor(id), pose: 'stand' };
 }
 
 export function syncQueue() {
@@ -168,29 +154,10 @@ function stepActor(a, dt) {
     a.y += (dy / dist) * step;
     if (Math.abs(dx) > 0.15) a.facing = dx < 0 ? -1 : 1;
   }
-  a.phase += dt * 9;
   paint(a);
 }
 
 let gymJob = null;
-const ROAM = ['lounge', 'window', 'plant', 'kitchen'];
-function nextHangout(a) {
-  const step = (a.roam.step || 0) + 1;
-  a.roam.step = step;
-  const kind = ROAM[step % ROAM.length];
-  const pool = HANGOUT.filter((s) => s.kind === kind);
-  return pool[((a.i || 0) + step) % pool.length];
-}
-function stepRoam(dt) {
-  for (const a of actors.values()) {
-    if (a.state !== 'idle' || a.walking || a.flying || (gymJob && gymJob.id === a.b.id)) continue;
-    if (!a.roam) a.roam = { until: ((a.i || 0) % 4) * 0.35, step: a.i || 0 };
-    a.roam.until -= dt;
-    if (a.roam.until > 0) continue;
-    a.roam.until = 12;
-    go(a, nextHangout(a), a.target, false);
-  }
-}
 function gymPlan(now) {
   const idle = [...actors.values()].filter((a) => a.state === 'idle' && a.b.id !== CODING_ID && a.b.id !== LEAD_ID).map((a) => a.b.id).sort();
   if (!idle.length) return null;
@@ -203,25 +170,19 @@ function gymPlan(now) {
 
 function train(a, kind, t) {
   const st = GYM[kind];
-  a.lean = 0;
-  a.drill = kind;
   if (kind === 'swim') {
-    const lap = (t * 0.16) % 2, going = lap < 1, along = going ? lap : 2 - lap;
+    const lap = (t * 0.12) % 2;
+    const going = lap < 1;
+    const along = going ? lap : 2 - lap;
     a.x = st.x + (st.x1 - st.x) * along;
-    a.y = st.y + Math.sin(t * 5) * 0.25;
-    a.pose = 'swim';
-    a.swimRot = (going ? -74 : 106) + Math.sin(t * 2.6) * 10;
-    a.phase = t * 8;
-    paint(a);
-    return;
+    a.y = st.y;
+    a.facing = going ? 1 : -1;
+  } else {
+    a.x = st.x;
+    a.y = st.y;
   }
-  a.x = st.x;
-  a.y = st.y;
-  a.pose = st.pose;
-  const bob = kind === 'lift' ? -Math.abs(Math.sin(t * 2.2)) * 1.5 : kind === 'run' ? -Math.abs(Math.sin(t * 10)) * 0.7 : 0;
-  if (kind === 'stretch') a.lean = Math.sin(t * 1.2) * 10;
-  if (kind === 'bike') a.phase = t * 8;
-  paint(a, bob);
+  a.pose = 'stand';
+  paint(a);
 }
 
 function syncGym(now, t) {
@@ -282,8 +243,7 @@ export function primeDeon() {
 function stepDeon(dt) {
   if (deon.mode !== 'walk') {
     deon.until -= dt;
-    deon.phase += dt * 1.6;
-    if (deon.until > 0) { paint(deon); return; }
+    if (deon.until > 0) return;
     deon.goal = pickDeon();
     deon.mode = 'walk';
     deon.pose = 'stand';
@@ -301,7 +261,6 @@ function stepDeon(dt) {
   deon.x = Math.min(DEON_ROOM.x1, Math.max(DEON_ROOM.x0, deon.x + (dx / dist) * step));
   deon.y = Math.min(DEON_ROOM.y1, Math.max(DEON_ROOM.y0, deon.y + (dy / dist) * step));
   if (Math.abs(dx) > 0.2) deon.facing = dx < 0 ? -1 : 1;
-  deon.phase += dt * 8;
   paint(deon);
 }
 
@@ -309,16 +268,6 @@ export function stepAll(dt, t) {
   for (const a of actors.values()) stepActor(a, dt);
   stepDeon(dt);
   syncGym(Date.now(), t);
-  stepRoam(dt);
-  for (const a of actors.values()) {
-    if (a.walking || a.flying) continue;
-    const busy = a.state === 'working' || a.drill;
-    a.phase += dt * (busy ? 8 : 1.6);
-    const bob = a.state === 'working'
-      ? Math.sin(t * (a.b.id === CODING_ID ? 8 : 5) + a.i) * (a.b.id === CODING_ID ? 0.45 : 0.28)
-      : 0;
-    paint(a, bob);
-  }
 }
 
 export function snapshot() {

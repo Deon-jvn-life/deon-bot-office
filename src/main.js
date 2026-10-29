@@ -1,8 +1,7 @@
 import { TEAM, LEAD_ID } from './team.js';
-import { mountCast, actors, stepBoard, setRack } from './sprites.js';
+import { mountCast, actors, stepBoard } from './sprites.js';
 import { boot, isSim, drawUsage } from './state.js';
 import { setState, stepAll, primeDeon, snapshot } from './move.js';
-import { CODING_ID } from './positions.js';
 
 mountCast();
 for (const t of TEAM) setState(t.id, 'idle', '', true);
@@ -13,13 +12,9 @@ let last = 0;
 function frame(now) {
   const dt = Math.min(0.05, last ? (now - last) / 1000 : 0.016);
   last = now;
-  const t = now / 1000;
-  stepAll(dt, t);
+  stepAll(dt, now / 1000);
   const chief = actors.get(LEAD_ID);
-  const coder = actors.get(CODING_ID);
-  const writing = !!(chief && chief.state === 'working' && !chief.walking && !chief.flying);
-  stepBoard(dt, writing);
-  setRack(!!(coder && coder.state === 'working' && !coder.walking && !coder.flying));
+  stepBoard(dt, !!(chief && chief.state === 'working' && !chief.walking && !chief.flying));
   requestAnimationFrame(frame);
 }
 requestAnimationFrame(frame);

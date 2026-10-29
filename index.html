@@ -5,45 +5,9 @@ html,body{margin:0;height:100%;overflow:hidden;background:#1c2128;font:13px syst
 #bg{width:100%;height:100%;display:block;user-select:none;pointer-events:none}
 #people{position:absolute;inset:0}
 .actor{position:absolute;height:12%;width:auto;transform:translate(-50%,-100%);transform-origin:50% 100%;pointer-events:auto;cursor:default;filter:drop-shadow(0 3px 2px rgba(0,0,0,.35));z-index:2}
-.actor .body{position:relative;height:100%;transform-origin:50% 88%}
 .actor img{height:100%;width:auto;display:block}
-.actor .limb{position:absolute;background:var(--bot,#8aa);border-radius:99px;pointer-events:none;transform-origin:50% 10%;box-shadow:inset 0 0 0 1px rgba(0,0,0,.12)}
-.actor .arm{width:16%;height:28%;top:40%}
-.actor .arm.l{left:4%}
-.actor .arm.r{right:4%}
-.actor .leg{width:14%;height:22%;top:72%}
-.actor .leg.l{left:27%}
-.actor .leg.r{right:27%}
-.actor .prop{position:absolute;left:10%;top:58%;width:20px;height:20px;display:block}
+.actor .prop{position:absolute;right:-8%;top:46%;width:18px;height:18px;display:block;pointer-events:none}
 .actor .prop svg{width:100%;height:100%;display:block;overflow:visible}
-.actor.walk .arm.l{animation:limb .42s ease-in-out infinite alternate}
-.actor.walk .arm.r{animation:limb .42s ease-in-out infinite alternate-reverse}
-.actor.walk .leg.l{animation:limb .42s ease-in-out infinite alternate-reverse}
-.actor.walk .leg.r{animation:limb .42s ease-in-out infinite alternate}
-.actor.type .arm.l,.actor.type .arm.r{animation:typeArm .14s ease-in-out infinite alternate}
-.actor.write .arm.r{animation:writeArm .36s ease-in-out infinite}
-.actor.write .arm.l{animation:swayArm .9s ease-in-out infinite alternate}
-.actor.sway .arm.l,.actor.sway .leg.l{animation:swayArm 1.8s ease-in-out infinite alternate}
-.actor.sway .arm.r,.actor.sway .leg.r{animation:swayArm 1.8s ease-in-out infinite alternate-reverse}
-.actor.lift .arm.l,.actor.lift .arm.r{animation:liftArm .5s ease-in-out infinite alternate}
-.actor.bike .leg.l{animation:limb .26s ease-in-out infinite alternate}
-.actor.bike .leg.r{animation:limb .26s ease-in-out infinite alternate-reverse}
-.actor.walk.run .arm.l,.actor.walk.run .arm.r,.actor.walk.run .leg.l,.actor.walk.run .leg.r{animation-duration:.22s}
-.actor.type img,.actor.write img{animation:headBob .26s ease-in-out infinite alternate}
-.actor.sway img{animation:headBob 1.7s ease-in-out infinite alternate}
-.actor.sit .body{clip-path:inset(0 0 34% 0)}
-.actor.sit .leg{display:none}
-.actor.swim .limb{visibility:hidden}
-#rack-glow{position:absolute;left:89%;top:68.2%;width:7.4%;height:8%;pointer-events:none;z-index:1;border-radius:2px;background:linear-gradient(#102838,#1a6d90 45%,#102838);opacity:.22}
-#rack-glow.on{animation:flicker .11s steps(2,end) infinite}
-@keyframes limb{from{transform:rotate(28deg)}to{transform:rotate(-24deg)}}
-@keyframes typeArm{from{transform:rotate(-12deg)}to{transform:rotate(-58deg)}}
-@keyframes writeArm{0%{transform:rotate(-16deg)}35%{transform:rotate(-68deg) translateY(8%)}70%{transform:rotate(-24deg)}100%{transform:rotate(-56deg)}}
-@keyframes swayArm{from{transform:rotate(14deg)}to{transform:rotate(-16deg)}}
-@keyframes liftArm{from{transform:rotate(-6deg)}to{transform:rotate(-145deg)}}
-@keyframes headBob{from{transform:translateY(0)}to{transform:translateY(-6%)}}
-@keyframes flicker{0%{opacity:.2;box-shadow:none}50%{opacity:1;box-shadow:0 0 12px rgba(130,220,255,.9)}}
-.actor.sit{height:12%}
 .actor .tag{position:absolute;left:50%;bottom:100%;transform:translate(-50%,-2px);color:rgba(225,230,236,.9);background:rgba(28,32,38,.72);padding:1px 5px;border-radius:4px;font-size:10px;white-space:nowrap;display:none}
 .actor:hover .tag,.actor.open .tag{display:block}
 .actor .q{position:absolute;left:50%;top:-2px;transform:translate(-50%,-100%);min-width:1.1em;text-align:center;font-size:11px;font-weight:700;color:#1c2128;background:#e7edf2;border-radius:99px;padding:0 5px;display:none}
