@@ -1,10 +1,16 @@
 import { bearerOk, rpc, body, BOTS, STATES, MAX_LINE } from './_lib.js';
 // Rule: status lines are short and generic (max 60 chars, printable text only), no private details.
+// Coding Helper: send bot_id "coder". It is stored as "coding-helper", the id the office uses.
+// "coding-helper" is still accepted. working types at the server racks; idle sits in the chair beside them.
+export function canonicalBotId(raw) {
+  const bot = String(raw || '').trim().toLowerCase();
+  return bot === 'coder' ? 'coding-helper' : bot;
+}
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).end();
   if (!bearerOk(req)) return res.status(401).json({ error: 'unauthorized' });
   const b = await body(req);
-  const bot = String(b.bot_id || '').toLowerCase();
+  const bot = canonicalBotId(b.bot_id);
   let state = String(b.state || '').toLowerCase();
   if (state === 'done/idle') state = 'done';
   const line = String(b.line ?? '').replace(/[\u0000-\u001f\u007f]/g, ' ').replace(/\s+/g, ' ').trim();
