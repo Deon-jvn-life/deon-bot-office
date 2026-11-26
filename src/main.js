@@ -750,20 +750,19 @@ function usedColor(pct) {
 }
 function ensureUse(id) {
   let row = botUse.get(id);
-  if (!row) { row = { shown: 0, target: 0, touched: false }; botUse.set(id, row); }
+  if (!row) { row = { shown: 0, target: 0 }; botUse.set(id, row); }
   return row;
 }
 function tickUse(id) {
-  const row = ensureUse(id);
-  row.touched = true;
-  row.target = Math.min(100, row.target + 10);
+  ensureUse(id);
   rowFlash = { id, at: performance.now() };
   usageDirty = true;
 }
-function syncOfficeUsed(used) {
+function applyShares(u) {
+  const raw = u && u.bots && typeof u.bots === 'object' && !Array.isArray(u.bots) ? u.bots : {};
   for (const t of TEAM) {
-    const row = ensureUse(t.id);
-    if (!row.touched || row.target < used) row.target = used;
+    const n = Number(raw[t.id]);
+    ensureUse(t.id).target = Number.isFinite(n) ? Math.max(0, Math.min(100, n)) : 0;
   }
   usageDirty = true;
 }
@@ -869,9 +868,8 @@ function paintUsageBoard() {
     c.fillText(t.short, x0 + 26, y0 + 24);
     const barX = x0, barY = y0 + rowH * 0.58, barW = colW - 120, barH = 22;
     c.fillStyle = '#2a3442'; roundRect(c, barX, barY, barW, barH, 8); c.fill();
-    const colr = usedColor(Math.round(pct));
-    c.fillStyle = colr; roundRect(c, barX, barY, Math.max(pct > 0 ? 10 : 0, barW * pct / 100), barH, 8); c.fill();
-    c.fillStyle = colr; c.font = '700 28px system-ui, sans-serif'; c.textAlign = 'right';
+    c.fillStyle = t.color; roundRect(c, barX, barY, Math.max(pct > 0.4 ? 8 : 0, barW * pct / 100), barH, 8); c.fill();
+    c.fillStyle = '#f4f7fb'; c.font = '700 28px system-ui, sans-serif'; c.textAlign = 'right';
     c.fillText(`${Math.round(pct)}%`, col * colW + colW - 22, y0 + rowH * 0.5);
     if (flashing) {
       const k = 1 - (now - rowFlash.at) / 900;
@@ -905,7 +903,7 @@ function stepUsage(dt) {
 }
 function drawUsage(u) {
   officeCopy = usageCopy(u);
-  if (officeCopy.has) syncOfficeUsed(officeCopy.used);
+  applyShares(u);
   paintOverlay();
   usageDirty = true;
   paintUsageBoard();
@@ -1698,4 +1696,5 @@ window.__office = {
   focus(px, py, pz, tx, ty, tz) { camera.position.set(px, py, pz); controls.target.set(tx, ty, tz); controls.update(); },
   setState(id, state, line) { setState(id, state, line || ''); },
   usageOf: (id) => { const r = ensureUse(id); return { shown: +r.shown.toFixed(2), target: r.target }; },
+  showUsage(u) { drawUsage(u); },
 };
