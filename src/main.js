@@ -8,6 +8,7 @@ import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
 import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeometry.js';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { TEAM, LEAD_ID } from './team.js';
+import { USAGE_ALIASES } from '../api/usage-bots.js';
 
 const STALE_WORKING_MS = 10 * 60 * 1000;
 const WARN_SILENCE_MS = 45 * 60 * 1000;
@@ -758,11 +759,30 @@ function tickUse(id) {
   rowFlash = { id, at: performance.now() };
   usageDirty = true;
 }
+function normShareName(value) {
+  return String(value).trim().toLowerCase().replace(/[’‘]/g, "'").replace(/\s+/g, ' ');
+}
+function shareTable(u) {
+  let raw = u && u.bots;
+  if (typeof raw === 'string') { try { raw = JSON.parse(raw); } catch { raw = null; } }
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) raw = {};
+  const byId = {};
+  for (const [key, value] of Object.entries(raw)) {
+    const n = typeof value === 'number' ? value : Number(value);
+    if (!Number.isFinite(n)) continue;
+    const clamped = Math.max(0, Math.min(100, n));
+    const alias = USAGE_ALIASES.find((bot) => bot.id === key || bot.names.some((name) => normShareName(name) === normShareName(key)));
+    byId[alias ? alias.id : key] = clamped;
+  }
+  return byId;
+}
 function applyShares(u) {
-  const raw = u && u.bots && typeof u.bots === 'object' && !Array.isArray(u.bots) ? u.bots : {};
+  const byId = shareTable(u);
   for (const t of TEAM) {
-    const n = Number(raw[t.id]);
-    ensureUse(t.id).target = Number.isFinite(n) ? Math.max(0, Math.min(100, n)) : 0;
+    const exact = Object.prototype.hasOwnProperty.call(byId, t.id) ? byId[t.id] : 0;
+    const row = ensureUse(t.id);
+    row.target = exact;
+    row.shown = exact;
   }
   usageDirty = true;
 }
@@ -855,8 +875,7 @@ function paintUsageBoard() {
     const row = i % ROWS_PER_COL;
     const x0 = col * colW + 18;
     const y0 = ROW_HEADER + row * rowH;
-    const u = ensureUse(t.id);
-    const pct = Math.max(0, Math.min(100, u.shown));
+    const pct = Math.max(0, Math.min(100, ensureUse(t.id).target));
     const flashing = rowFlash && rowFlash.id === t.id && now - rowFlash.at < 900;
     if (flashing) {
       const k = 1 - (now - rowFlash.at) / 900;
@@ -868,7 +887,7 @@ function paintUsageBoard() {
     c.fillText(t.short, x0 + 26, y0 + 24);
     const barX = x0, barY = y0 + rowH * 0.58, barW = colW - 120, barH = 22;
     c.fillStyle = '#2a3442'; roundRect(c, barX, barY, barW, barH, 8); c.fill();
-    c.fillStyle = t.color; roundRect(c, barX, barY, Math.max(pct > 0.4 ? 8 : 0, barW * pct / 100), barH, 8); c.fill();
+    if (pct > 0) { c.fillStyle = t.color; roundRect(c, barX, barY, barW * pct / 100, barH, 8); c.fill(); }
     c.fillStyle = '#f4f7fb'; c.font = '700 28px system-ui, sans-serif'; c.textAlign = 'right';
     c.fillText(`${Math.round(pct)}%`, col * colW + colW - 22, y0 + rowH * 0.5);
     if (flashing) {
@@ -882,15 +901,9 @@ function paintUsageBoard() {
   });
   usage.t.needsUpdate = true;
 }
-function stepUsage(dt) {
-  let moved = false;
-  for (const row of botUse.values()) {
-    const d = row.target - row.shown;
-    if (Math.abs(d) > 0.12) { row.shown += d * Math.min(1, dt * 7); moved = true; }
-    else if (row.shown !== row.target) { row.shown = row.target; moved = true; }
-  }
+function stepUsage() {
   const flashing = !!(rowFlash && performance.now() - rowFlash.at < 900);
-  if (moved || flashing || usageDirty) { paintUsageBoard(); usageDirty = false; }
+  if (flashing || usageDirty) { paintUsageBoard(); usageDirty = false; }
   if (!flashing || !rowFlash) { glint.visible = false; return; }
   const idx = TEAM.findIndex((t) => t.id === rowFlash.id);
   if (idx < 0) { glint.visible = false; return; }
