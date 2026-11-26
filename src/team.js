@@ -2,7 +2,7 @@ export const LEAD_ID = '8ab7d38a-8b50-4d19-abb0-aa40a5ae686b';
 export const TEAM = [
   { id: LEAD_ID, name: "Deon's Master Chief", short: 'Chief', color: '#3fb6c6', dept: 'Command', acc: 'marker', hat: 'captain' },
   { id: '494e6a0b-f66d-46b6-9c45-05b43f727e23', name: 'Adjutant', short: 'Adjutant', color: '#4c78c4', dept: 'Admin and Compliance', acc: 'clipboard', hat: 'micset' },
-  { id: 'c7e14019-a299-4198-a4c6-d878a787c23e', name: 'Accountant', short: 'Accountant', color: '#8b9098', dept: 'Finance', acc: 'calculator', hat: 'visor' },
+  { id: 'c7e14019-a299-4198-a4c6-d878a787c23e', name: 'Accountant', short: 'Accountant', color: '#2eb8b0', dept: 'Finance', acc: 'calculator', hat: 'visor' },
   { id: '4de86d3f-f8a8-4859-84a2-884b8031ef1c', name: 'Overwatch', short: 'Overwatch', color: '#4f6fb8', dept: 'Dashboards', acc: 'binoculars', hat: 'army' },
   { id: '9333ecc7-45be-4392-a622-6957398653db', name: 'Connection Manager', short: 'Connect', color: '#5aa36a', dept: 'Integrations', acc: 'cable', hat: 'hardhat' },
   { id: '5b53350b-0b86-44df-b07b-3fa591306f66', name: 'Vector', short: 'Vector', color: '#c45a50', dept: 'Learning and Research', acc: 'book', hat: 'mortar' },
