@@ -1465,7 +1465,7 @@ function setState(id, state, line, instant = false) {
   if (bot.clockIn) bot.clockIn = null;
   const prev = bot.target; bot.state = state;
   noteWaiting(id, state, statusById.get(id));
-  if (!instant && prevState === 'working' && state === 'idle') {
+  if (!instant && prevState === 'working' && state === 'idle' && id !== CODING_ID) {
     beginClockIn(bot);
     syncQueue();
     return;
